@@ -1,0 +1,20 @@
+<!doctype html>
+<title>Заявка</title>
+<h1>Заявка #{{ ticket.id }}</h1>
+
+<p><strong>От:</strong> {{ ticket.user_email }}</p>
+<p><strong>Тема:</strong> {{ ticket.subject }}</p>
+<p><strong>Текст:</strong> {{ ticket.body }}</p>
+<p><strong>Дата:</strong> {{ ticket.created_at }}</p>
+
+<form method="post">
+  <label>Статус:</label>
+  <select name="status">
+    <option value="new" {% if ticket.status == 'new' %}selected{% endif %}>Новая</option>
+    <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
+    <option value="done" {% if ticket.status == 'done' %}selected{% endif %}>Выполнена</option>
+  </select>
+  <button type="submit">Сохранить</button>
+</form>
+
+<p><a href="{{ url_for('tickets') }}">← Назад к списку</a></p>

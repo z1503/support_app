@@ -4,8 +4,9 @@
 <body>
   <h2>Новая заявка</h2>
   <form method="post">
-    <input type="text" name="title" placeholder="Заголовок"><br>
-    <textarea name="description" placeholder="Описание"></textarea><br>
+    <input type="text" name="sender" placeholder="Отправитель"><br>
+    <input type="text" name="subject" placeholder="Тема"><br>
+    <textarea name="body" placeholder="Описание"></textarea><br>
     <input type="submit" value="Создать">
   </form>
   <a href="{{ url_for('dashboard') }}">Назад</a>

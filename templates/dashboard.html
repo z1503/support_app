@@ -2,25 +2,23 @@
 <html>
 <head><title>Панель</title></head>
 <body>
-  <h2>Добро пожаловать, {{ session.username }}</h2>
+  <h2>Добро пожаловать, {{ session['user'] }}</h2>
   <a href="{{ url_for('create') }}">Создать заявку</a> |
   <a href="{{ url_for('logout') }}">Выход</a>
   <h3>Заявки:</h3>
   <ul>
     {% for ticket in tickets %}
       <li>
-        <strong>{{ ticket[1] }}</strong> — {{ ticket[2] }} (статус: {{ ticket[3] }})
-        {% if session.role == 'admin' %}
-          <form method="post" action="{{ url_for('update', ticket_id=ticket[0]) }}">
-            <select name="status">
-              <option value="Новая">Новая</option>
-              <option value="В работе">В работе</option>
-              <option value="Закрыта">Закрыта</option>
-            </select>
-            <button type="submit">Обновить</button>
-          </form>
-          Отправитель: {{ ticket[4] }}
-        {% endif %}
+        <strong>{{ ticket['sender'] }}</strong> — {{ ticket['subject'] }} (статус: {{ ticket['status'] }})
+        <form method="post" action="{{ url_for('update', ticket_id=ticket['id']) }}">
+          <select name="status">
+            <option value="Новая" {% if ticket['status'] == 'Новая' %}selected{% endif %}>Новая</option>
+            <option value="В работе" {% if ticket['status'] == 'В работе' %}selected{% endif %}>В работе</option>
+            <option value="Закрыта" {% if ticket['status'] == 'Закрыта' %}selected{% endif %}>Закрыта</option>
+          </select>
+          <button type="submit">Обновить</button>
+        </form>
+        Отправитель: {{ ticket['sender'] }}
       </li>
     {% endfor %}
   </ul>
