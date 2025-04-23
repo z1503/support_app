@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Административная панель</h1>
+        <nav>
+            <a href="/dashboard">Все заявки</a>
+            <a href="/logout">Выход</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Добро пожаловать, {{ session['user'] }} (роль: {{ session['role'] }})</h2>
+        <p>Здесь будет размещена статистика, управление пользователями и другие функции.</p>
+    </main>
+
+    <footer>
+        <p>&copy; {{ 2025 }}</p>
+    </footer>
+</body>
+</html>

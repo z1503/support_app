@@ -1,12 +1,21 @@
-<!doctype html>
-<html>
-<head><title>Вход</title></head>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+</head>
 <body>
-  <h2>Вход</h2>
-  <form method="post">
-    <input type="text" name="username" placeholder="Имя пользователя"><br>
-    <input type="password" name="password" placeholder="Пароль"><br>
-    <input type="submit" value="Войти">
-  </form>
+    <h2>Вход в систему</h2>
+    <form method="POST">
+        <label for="email">Email:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label for="password">Пароль:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <button type="submit">Войти</button>
+    </form>
+    <br>
+    <a href="/register">Нет аккаунта? Зарегистрироваться</a>
 </body>
 </html>

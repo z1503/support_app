@@ -1,20 +1,28 @@
-<!doctype html>
-<title>Заявка</title>
-<h1>Заявка #{{ ticket.id }}</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявка #{{ ticket.id }}</title>
+</head>
+<body>
+    <h2>Заявка #{{ ticket.id }}</h2>
+    <p><strong>Отправитель:</strong> {{ ticket.sender }}</p>
+    <p><strong>Тема:</strong> {{ ticket.subject }}</p>
+    <p><strong>Описание:</strong> {{ ticket.body }}</p>
+    <p><strong>Статус:</strong> {{ ticket.status }}</p>
+    <p><strong>Дата создания:</strong> {{ ticket.created_at }}</p>
 
-<p><strong>От:</strong> {{ ticket.user_email }}</p>
-<p><strong>Тема:</strong> {{ ticket.subject }}</p>
-<p><strong>Текст:</strong> {{ ticket.body }}</p>
-<p><strong>Дата:</strong> {{ ticket.created_at }}</p>
+    <form method="POST">
+        <label for="status">Изменить статус:</label>
+        <select name="status">
+            <option value="новая" {% if ticket.status == "новая" %}selected{% endif %}>Новая</option>
+            <option value="в работе" {% if ticket.status == "в работе" %}selected{% endif %}>В работе</option>
+            <option value="завершена" {% if ticket.status == "завершена" %}selected{% endif %}>Завершена</option>
+        </select>
+        <button type="submit">Обновить</button>
+    </form>
 
-<form method="post">
-  <label>Статус:</label>
-  <select name="status">
-    <option value="new" {% if ticket.status == 'new' %}selected{% endif %}>Новая</option>
-    <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>В работе</option>
-    <option value="done" {% if ticket.status == 'done' %}selected{% endif %}>Выполнена</option>
-  </select>
-  <button type="submit">Сохранить</button>
-</form>
-
-<p><a href="{{ url_for('tickets') }}">← Назад к списку</a></p>
+    <br>
+    <a href="/dashboard">Назад к списку заявок</a>
+</body>
+</html>

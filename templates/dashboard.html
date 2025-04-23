@@ -1,26 +1,39 @@
-<!doctype html>
-<html>
-<head><title>Панель</title></head>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель заявок</title>
+</head>
 <body>
-  <h2>Добро пожаловать, {{ session['user'] }}</h2>
-  <a href="{{ url_for('create') }}">Создать заявку</a> |
-  <a href="{{ url_for('logout') }}">Выход</a>
-  <h3>Заявки:</h3>
-  <ul>
-    {% for ticket in tickets %}
-      <li>
-        <strong>{{ ticket['sender'] }}</strong> — {{ ticket['subject'] }} (статус: {{ ticket['status'] }})
-        <form method="post" action="{{ url_for('update', ticket_id=ticket['id']) }}">
-          <select name="status">
-            <option value="Новая" {% if ticket['status'] == 'Новая' %}selected{% endif %}>Новая</option>
-            <option value="В работе" {% if ticket['status'] == 'В работе' %}selected{% endif %}>В работе</option>
-            <option value="Закрыта" {% if ticket['status'] == 'Закрыта' %}selected{% endif %}>Закрыта</option>
-          </select>
-          <button type="submit">Обновить</button>
-        </form>
-        Отправитель: {{ ticket['sender'] }}
-      </li>
-    {% endfor %}
-  </ul>
+    <h2>Добро пожаловать, {{ session.user }}!</h2>
+    <p>Ваша роль: {{ session.role }}</p>
+
+    <a href="/create">Создать новую заявку</a> |
+    {% if session.role == 'admin' %}
+    <a href="/admin_dashboard">Панель администратора</a> |
+    {% endif %}
+    <a href="/logout">Выйти</a>
+
+    <h3>Список заявок</h3>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Отправитель</th>
+            <th>Тема</th>
+            <th>Статус</th>
+            <th>Дата</th>
+            <th>Действия</th>
+        </tr>
+        {% for ticket in tickets %}
+        <tr>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.sender }}</td>
+            <td>{{ ticket.subject }}</td>
+            <td>{{ ticket.status }}</td>
+            <td>{{ ticket.created_at }}</td>
+            <td><a href="/ticket/{{ ticket.id }}">Просмотр</a></td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>

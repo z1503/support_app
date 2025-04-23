@@ -1,14 +1,24 @@
-<!doctype html>
-<html>
-<head><title>Создать заявку</title></head>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Создать заявку</title>
+</head>
 <body>
-  <h2>Новая заявка</h2>
-  <form method="post">
-    <input type="text" name="sender" placeholder="Отправитель"><br>
-    <input type="text" name="subject" placeholder="Тема"><br>
-    <textarea name="body" placeholder="Описание"></textarea><br>
-    <input type="submit" value="Создать">
-  </form>
-  <a href="{{ url_for('dashboard') }}">Назад</a>
+    <h2>Создание новой заявки</h2>
+    <form method="POST">
+        <label for="sender">Ваше имя:</label><br>
+        <input type="text" name="sender" required><br><br>
+
+        <label for="subject">Тема:</label><br>
+        <input type="text" name="subject" required><br><br>
+
+        <label for="body">Описание:</label><br>
+        <textarea name="body" rows="5" cols="40" required></textarea><br><br>
+
+        <button type="submit">Отправить заявку</button>
+    </form>
+    <br>
+    <a href="/dashboard">Назад к списку заявок</a>
 </body>
 </html>
