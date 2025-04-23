@@ -136,5 +136,66 @@ def logout():
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
+@app.route("/admin/users", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def admin_users():
+    search_query = request.args.get("q", "")
+    conn = get_db_connection()
+
+    if search_query:
+        users = conn.execute("""
+            SELECT * FROM users
+            WHERE username LIKE ? OR email LIKE ?
+        """, (f"%{search_query}%", f"%{search_query}%")).fetchall()
+    else:
+        users = conn.execute("SELECT * FROM users").fetchall()
+
+    conn.close()
+    return render_template("admin_users.html", users=users, search_query=search_query)
+
+@app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
+@login_required
+@role_required("admin")
+def delete_user(user_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("admin_users"))
+
+@app.route("/admin/users/<int:user_id>/role", methods=["POST"])
+@login_required
+@role_required("admin")
+def update_user_role(user_id):
+    new_role = request.form["role"]
+    try:
+        conn = get_db_connection()
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('admin_users'))
+    except Exception as e:
+        app.logger.error(f"Error updating user role: {e}")
+        return "Ошибка при обновлении роли", 500
+
+@app.route("/admin/users/<int:user_id>/update", methods=["POST"])
+@login_required
+@role_required("admin")
+def update_user_info(user_id):
+    username = request.form["username"]
+    email = request.form["email"]
+    role = request.form["role"]
+    try:
+        conn = get_db_connection()
+        conn.execute("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?",
+                     (username, email, role, user_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('admin_users'))
+    except Exception as e:
+        app.logger.error(f"Error updating user info: {e}")
+        return "Ошибка при обновлении данных пользователя", 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

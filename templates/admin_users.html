@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи</title>
+</head>
+<body>
+    <h1>Список пользователей</h1>
+
+    <form method="GET" action="{{ url_for('admin_users') }}">
+        <input type="text" name="q" placeholder="Поиск по имени или email" value="{{ search_query }}">
+        <button type="submit">Поиск</button>
+    </form>
+    
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Имя пользователя</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+
+                <form method="POST" action="{{ url_for('update_user_info', user_id=user.id) }}">
+                    <td><input type="text" name="username" value="{{ user.username }}"></td>
+                    <td><input type="email" name="email" value="{{ user.email }}"></td>
+                    <td>
+                        <select name="role" onchange="this.form.submit()">
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+                        </select>
+                    </td>
+                    <td><button type="submit">Сохранить</button></td>
+                </form>
+                 
+                <td>
+                    <form method="POST" action="{{ url_for('update_user_role', user_id=user.id) }}">
+                        <select name="role" onchange="this.form.submit()">
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+                        </select>
+                    </form>
+                </td>
+                
+                <td>
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Удалить пользователя?');">
+                        <button type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="{{ url_for('admin_dashboard') }}">← Назад в админ-панель</a></p>
+</body>
+</html>
