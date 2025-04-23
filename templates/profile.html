@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменить профиль</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h2>Изменить профиль</h2>
+
+    <!-- Сообщение об ошибке, если есть -->
+    {% if error %}
+        <p style="color: red; font-weight: bold;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <!-- Поле для нового email -->
+        <label for="email">Новый email</label>
+        <input type="email" name="email" id="email" value="{{ user['email'] }}" required><br><br>
+
+        <!-- Поле для нового пароля -->
+        <label for="password">Новый пароль</label>
+        <input type="password" name="password" id="password" placeholder="Введите новый пароль"><br><br>
+
+        <!-- Поле для подтверждения нового пароля -->
+        <label for="confirm_password">Подтвердите новый пароль</label>
+        <input type="password" name="confirm_password" id="confirm_password" placeholder="Подтвердите пароль"><br><br>
+
+        <!-- Кнопка отправки формы -->
+        <button type="submit">Обновить профиль</button>
+    </form>
+
+    <hr>
+
+    <!-- Ссылка для возврата в панель управления -->
+    <a href="{{ url_for('dashboard') }}">Вернуться в панель управления</a>
+</body>
+</html>

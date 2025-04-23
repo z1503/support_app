@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 from functools import wraps
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import render_template
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
@@ -50,20 +54,24 @@ def role_required(role):
     return decorator
 
 # Функция отправки письма с подтверждением
-def send_confirmation_email(recipient_email):
+def send_confirmation_email(email, username="Пользователь"):
     try:
-        msg = Message(
-            "Подтверждение регистрации",
-            recipients=[recipient_email]
-        )
-        msg.body = (
-            f"Здравствуйте!\n\n"
-            f"Вы успешно зарегистрировались в системе.\n"
-            f"Если вы не выполняли регистрацию, просто проигнорируйте это письмо."
-        )
-        mail.send(msg)
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Подтверждение регистрации"
+        msg["From"] = os.getenv("EMAIL_FROM")
+        msg["To"] = email
+
+        confirm_url = f"http://yourdomain.com/confirm?email={email}"  # заглушка
+
+        html = render_template("email_confirmation.html", username=username, confirm_url=confirm_url)
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP_SSL("smtp.mail.ru", 465) as server:
+            server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
+            server.send_message(msg)
+
     except Exception as e:
-        app.logger.error(f"Ошибка при отправке письма подтверждения: {e}")
+        app.logger.error(f"Email sending failed: {e}")
 
 @app.route("/")
 def index():
@@ -82,6 +90,7 @@ def login():
         conn.close()
 
         if user and check_password_hash(user["password"], password):
+            session['user_id'] = user['id']
             session["user"] = user["username"]
             session["role"] = user["role"]
             return redirect("/dashboard")
@@ -233,6 +242,63 @@ def update_user_info(user_id):
     except Exception as e:
         app.logger.error(f"Error updating user info: {e}")
         return "Ошибка при обновлении данных пользователя", 500
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    user_id = session.get('user_id')  # Получаем user_id из сессии
+
+    if not user_id:
+        return redirect("/login")  # Если user_id нет в сессии, перенаправляем на страницу входа
+
+    # Дальше ваш код для редактирования профиля
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    if not user:
+        return "Пользователь не найден", 404  # Если пользователь не найден, возвращаем ошибку
+
+    # Обработка POST-запроса для редактирования данных профиля
+    if request.method == "POST":
+        new_email = request.form["email"]
+        new_password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+
+        # Проверяем, совпадают ли пароли
+        if new_password != confirm_password:
+            error_message = "Пароли не совпадают."
+            return render_template("profile.html", error=error_message, user=user)
+
+        try:
+            # Проверяем, существует ли email в базе данных, кроме текущего пользователя
+            user_with_email = conn.execute("SELECT * FROM users WHERE email = ? AND id != ?", (new_email, user_id)).fetchone()
+
+            if user_with_email:
+                error_message = "Пользователь с таким email уже существует."
+                return render_template("profile.html", error=error_message, user=user)
+
+            # Обновляем данные пользователя
+            if new_password:
+                hashed_password = generate_password_hash(new_password)
+                conn.execute("UPDATE users SET email = ?, password = ? WHERE id = ?", (new_email, hashed_password, user_id))
+            else:
+                conn.execute("UPDATE users SET email = ? WHERE id = ?", (new_email, user_id))
+
+            conn.commit()
+            conn.close()
+
+            # После успешного обновления можно перенаправить на другую страницу, например на панель управления
+            return redirect("/dashboard")
+
+        except Exception as e:
+            app.logger.error(f"Error during profile update: {e}")
+            error_message = "Произошла ошибка при обновлении профиля."
+            return render_template("profile.html", error=error_message, user=user)
+
+    # Если метод GET, просто отображаем текущие данные пользователя
+    conn.close()
+
+    return render_template("profile.html", user=user)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

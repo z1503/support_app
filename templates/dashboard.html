@@ -7,7 +7,8 @@
 <body>
     <h2>Добро пожаловать, {{ session.user }}!</h2>
     <p>Ваша роль: {{ session.role }}</p>
-
+    
+    <a href="{{ url_for('profile') }}">Изменить профиль</a>
     <a href="/create">Создать новую заявку</a> |
     {% if session.role == 'admin' %}
     <a href="/admin_dashboard">Панель администратора</a> |
