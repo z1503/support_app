@@ -12,7 +12,7 @@
         <button type="submit">Поиск</button>
     </form>
     
-    <table border="1">
+    <table border="1" cellpadding="8">
         <thead>
             <tr>
                 <th>ID</th>
@@ -26,37 +26,48 @@
             {% for user in users %}
             <tr>
                 <td>{{ user.id }}</td>
-
-                <form method="POST" action="{{ url_for('update_user_info', user_id=user.id) }}">
-                    <td><input type="text" name="username" value="{{ user.username }}"></td>
-                    <td><input type="email" name="email" value="{{ user.email }}"></td>
-                    <td>
-                        <select name="role" onchange="this.form.submit()">
-                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
-                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
-                        </select>
-                    </td>
-                    <td><button type="submit">Сохранить</button></td>
-                </form>
-                 
                 <td>
-                    <form method="POST" action="{{ url_for('update_user_role', user_id=user.id) }}">
-                        <select name="role" onchange="this.form.submit()">
-                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
-                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
-                        </select>
-                    </form>
+                    <form method="POST" action="{{ url_for('update_user_info', user_id=user.id) }}">
+                        <input type="text" name="username" value="{{ user.username }}">
                 </td>
-                
                 <td>
-                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Удалить пользователя?');">
-                        <button type="submit">Удалить</button>
+                        <input type="email" name="email" value="{{ user.email }}">
+                </td>
+                <td>
+                        <select name="role">
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+                            <option value="client" {% if user.role == 'client' %}selected{% endif %}>client</option>
+                        </select>
+                </td>
+                <td>
+                        <button type="submit">Сохранить</button>
+                    </form>
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Удалить пользователя?');">
+                        <button type="button" class="delete-btn" data-user-id="{{ user.id }}">Удалить</button>
                     </form>
                 </td>
             </tr>
+            
             {% endfor %}
         </tbody>
     </table>
+
     <p><a href="{{ url_for('admin_dashboard') }}">← Назад в админ-панель</a></p>
 </body>
 </html>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(".delete-btn").on("click", function () {
+        if (!confirm("Удалить пользователя?")) return;
+
+        const userId = $(this).data("user-id");
+
+        $.post(`/admin/users/delete/${userId}`, function () {
+            location.reload(); // Или удаляй строку таблицы вручную
+        }).fail(function () {
+            alert("Ошибка при удалении");
+        });
+    });
+</script>

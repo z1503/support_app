@@ -10,6 +10,7 @@ from flask import render_template
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+from flask import flash, session
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
@@ -61,11 +62,15 @@ def send_confirmation_email(email, username="Пользователь"):
         msg["From"] = os.getenv("EMAIL_FROM")
         msg["To"] = email
 
-        confirm_url = f"http://yourdomain.com/confirm?email={email}"  # заглушка
+        # Используем переменную окружения для домена
+        domain_name = os.getenv("DOMAIN_NAME", "127.0.0.1:5000")  # если переменная не задана, по умолчанию localhost
+
+        confirm_url = f"http://{domain_name}/confirm?email={email}"
 
         html = render_template("email_confirmation.html", username=username, confirm_url=confirm_url)
         msg.attach(MIMEText(html, "html"))
 
+        # Используем переменные окружения для данных почтового ящика
         with smtplib.SMTP_SSL("smtp.mail.ru", 465) as server:
             server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
             server.send_message(msg)
@@ -109,20 +114,28 @@ def register():
 
         try:
             conn = get_db_connection()
-            # Проверяем, что email уникален
-            user_exists = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-            if user_exists:
-                return "Пользователь с таким email уже существует.", 400
 
-            conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-                         (username, email, hashed_password))
+            # Проверяем, что email уникален
+            user_exists_by_email = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            if user_exists_by_email:
+                conn.close()
+                return render_template("register.html", error="Пользователь с таким email уже существует.")
+
+            # Проверяем, что имя пользователя уникально
+            user_exists_by_username = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+            if user_exists_by_username:
+                conn.close()
+                return render_template("register.html", error="Пользователь с таким именем уже существует.")
+
+            # Добавляем пользователя с ролью по умолчанию client
+            conn.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+                         (username, email, hashed_password, "client"))
             conn.commit()
             conn.close()
 
-            # Отправляем письмо с подтверждением
-            send_confirmation_email(email)
-
+            flash("Регистрация прошла успешно!", "success")
             return redirect("/login")
+
         except Exception as e:
             app.logger.error(f"Error during registration: {e}")
             return "Ошибка при регистрации", 500
@@ -133,7 +146,19 @@ def register():
 @login_required
 def dashboard():
     conn = get_db_connection()
-    tickets = conn.execute("SELECT id, sender, subject, status, created_at FROM tickets ORDER BY created_at DESC").fetchall()
+
+    if session["role"] == "client":
+        # Показываем только заявки пользователя
+        tickets = conn.execute(
+            "SELECT id, sender, subject, status, created_at FROM tickets WHERE sender = ? ORDER BY created_at DESC",
+            (session["user"],)
+        ).fetchall()
+    else:
+        # Показываем все заявки
+        tickets = conn.execute(
+            "SELECT id, sender, subject, status, created_at FROM tickets ORDER BY created_at DESC"
+        ).fetchall()
+
     conn.close()
     return render_template("dashboard.html", tickets=tickets)
 
@@ -201,14 +226,36 @@ def admin_users():
     return render_template("admin_users.html", users=users, search_query=search_query)
 
 @app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
-@login_required
-@role_required("admin")
 def delete_user(user_id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("admin_users"))
+    try:
+        conn = get_db_connection()
+
+        # Получаем роль пользователя, которого пытаемся удалить
+        user = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+
+        if not user:
+            flash("Пользователь не найден", "error")
+            conn.close()
+            return redirect(url_for('admin_users'))
+
+        # Если это админ, проверяем, сколько админов осталось
+        if user and user["role"] == "admin":
+            admin_count = conn.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0]
+            app.logger.debug(f"Trying to delete user_id={user_id}, role={user['role']}, remaining admins={admin_count}")
+            if admin_count <= 1:
+                conn.close()
+                flash("Нельзя удалить последнего администратора!", "error")
+                return redirect(url_for('admin_users'))
+
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        flash("Пользователь успешно удалён", "success")
+        return redirect(url_for('admin_users'))
+    except Exception as e:
+        app.logger.error(f"Error during user deletion: {e}")
+        flash("Ошибка при удалении пользователя", "error")
+        return redirect(url_for('admin_users'))
 
 @app.route("/admin/users/<int:user_id>/role", methods=["POST"])
 @login_required
@@ -299,6 +346,24 @@ def profile():
 
     return render_template("profile.html", user=user)
 
+@app.route("/update_role", methods=["POST"])
+@login_required
+def update_role():
+    if session.get("role") != "admin":
+        return "Доступ запрещён", 403
+
+    user_id = request.form["user_id"]
+    new_role = request.form["new_role"]
+
+    try:
+        conn = get_db_connection()
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+        conn.commit()
+        conn.close()
+        return redirect("/admin/users")
+    except Exception as e:
+        app.logger.error(f"Ошибка при обновлении роли: {e}")
+        return "Ошибка при обновлении роли", 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
