@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, url_for
+from flask_mail import Mail, Message
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -14,6 +15,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
+# Конфигурация Flask-Mail
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.mail.ru")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 465))
+app.config["MAIL_USE_SSL"] = os.getenv("MAIL_USE_SSL", "True") == "True"
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
+
+mail = Mail(app)
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -37,6 +48,22 @@ def role_required(role):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+# Функция отправки письма с подтверждением
+def send_confirmation_email(recipient_email):
+    try:
+        msg = Message(
+            "Подтверждение регистрации",
+            recipients=[recipient_email]
+        )
+        msg.body = (
+            f"Здравствуйте!\n\n"
+            f"Вы успешно зарегистрировались в системе.\n"
+            f"Если вы не выполняли регистрацию, просто проигнорируйте это письмо."
+        )
+        mail.send(msg)
+    except Exception as e:
+        app.logger.error(f"Ошибка при отправке письма подтверждения: {e}")
 
 @app.route("/")
 def index():
@@ -65,36 +92,33 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    error = None
     if request.method == "POST":
         username = request.form["username"]
         email = request.form["email"]
         password = request.form["password"]
-        role = "user"
         hashed_password = generate_password_hash(password)
 
-        conn = get_db_connection()
-        existing_user = conn.execute(
-            "SELECT * FROM users WHERE username = ? OR email = ?", (username, email)
-        ).fetchone()
+        try:
+            conn = get_db_connection()
+            # Проверяем, что email уникален
+            user_exists = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            if user_exists:
+                return "Пользователь с таким email уже существует.", 400
 
-        if existing_user:
+            conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                         (username, email, hashed_password))
+            conn.commit()
             conn.close()
-            error = "Пользователь с таким именем или email уже существует"
-        else:
-            try:
-                conn.execute(
-                    "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-                    (username, email, hashed_password, role),
-                )
-                conn.commit()
-                conn.close()
-                return redirect("/login")
-            except Exception as e:
-                app.logger.error(f"Ошибка при регистрации: {e}")
-                error = "Ошибка при регистрации"
 
-    return render_template("register.html", error=error)
+            # Отправляем письмо с подтверждением
+            send_confirmation_email(email)
+
+            return redirect("/login")
+        except Exception as e:
+            app.logger.error(f"Error during registration: {e}")
+            return "Ошибка при регистрации", 500
+
+    return render_template("register.html")
 
 @app.route("/dashboard")
 @login_required
