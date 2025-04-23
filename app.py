@@ -45,11 +45,13 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
+        username_or_email = request.form["username_or_email"]
         password = request.form["password"]
 
         conn = get_db_connection()
-        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        user = conn.execute("""
+            SELECT * FROM users WHERE username = ? OR email = ?
+        """, (username_or_email, username_or_email)).fetchone()
         conn.close()
 
         if user and check_password_hash(user["password"], password):
@@ -57,31 +59,42 @@ def login():
             session["role"] = user["role"]
             return redirect("/dashboard")
         else:
-            return "Неверный email или пароль", 401
+            return "Неверный логин или пароль", 401
 
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    error = None
     if request.method == "POST":
         username = request.form["username"]
         email = request.form["email"]
         password = request.form["password"]
-        role = request.form["role"]
+        role = "user"
         hashed_password = generate_password_hash(password)
 
-        try:
-            conn = get_db_connection()
-            conn.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-                         (username, email, hashed_password, role))
-            conn.commit()
-            conn.close()
-            return redirect("/login")
-        except Exception as e:
-            app.logger.error(f"Error during registration: {e}")
-            return "Ошибка при регистрации", 500
+        conn = get_db_connection()
+        existing_user = conn.execute(
+            "SELECT * FROM users WHERE username = ? OR email = ?", (username, email)
+        ).fetchone()
 
-    return render_template("register.html")
+        if existing_user:
+            conn.close()
+            error = "Пользователь с таким именем или email уже существует"
+        else:
+            try:
+                conn.execute(
+                    "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+                    (username, email, hashed_password, role),
+                )
+                conn.commit()
+                conn.close()
+                return redirect("/login")
+            except Exception as e:
+                app.logger.error(f"Ошибка при регистрации: {e}")
+                error = "Ошибка при регистрации"
+
+    return render_template("register.html", error=error)
 
 @app.route("/dashboard")
 @login_required

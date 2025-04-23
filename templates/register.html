@@ -3,28 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>Регистрация</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .error { color: red; margin-bottom: 10px; }
+        input, button { display: block; margin: 10px 0; }
+    </style>
 </head>
 <body>
-    <h2>Регистрация</h2>
+    <h1>Регистрация</h1>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
     <form method="POST">
-        <label for="username">Имя пользователя:</label><br>
-        <input type="text" name="username" required><br><br>
-
-        <label for="email">Email:</label><br>
-        <input type="email" name="email" required><br><br>
-
-        <label for="password">Пароль:</label><br>
-        <input type="password" name="password" required><br><br>
-
-        <label for="role">Роль:</label><br>
-        <select name="role" required>
-            <option value="user">Пользователь</option>
-            <option value="admin">Администратор</option>
-        </select><br><br>
-
+        <label for="username">Имя пользователя:</label>
+        <input type="text" name="username" id="username" required>
+    
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" required
+               pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+               title="Введите корректный email, например: name@example.com"
+               placeholder="example@domain.com">
+    
+        <label for="password">Пароль:</label>
+        <input type="password" name="password" id="password" required>
+    
         <button type="submit">Зарегистрироваться</button>
     </form>
-    <br>
-    <a href="/login">Уже есть аккаунт? Войти</a>
+    
+
+    <p><a href="{{ url_for('login') }}">Уже зарегистрированы? Войти</a></p>
 </body>
 </html>
