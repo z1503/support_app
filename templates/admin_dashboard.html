@@ -4,7 +4,9 @@
 
 {% block content %}
     <h2 class="mb-3">Добро пожаловать, {{ session['user'] }} 
-        <small class="text-muted">(роль: {{ session['role'] }})</small>
     </h2>
     <p class="lead">Здесь будет размещена статистика, управление пользователями и другие функции.</p>
+
+    <!-- Кнопка для перехода на страницу управления пользователями -->
+    <a class="btn btn-primary" href="{{ url_for('admin_users') }}">Управление пользователями</a>
 {% endblock %}

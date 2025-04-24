@@ -225,36 +225,39 @@ def admin_users():
     conn.close()
     return render_template("admin_users.html", users=users, search_query=search_query)
 
-@app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
-def delete_user(user_id):
+@app.route("/admin/users/delete", methods=["POST"])
+def delete_selected_users():
     try:
         conn = get_db_connection()
 
-        # Получаем роль пользователя, которого пытаемся удалить
-        user = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+        # Получаем список ID пользователей, которых нужно удалить
+        user_ids = request.form.getlist('user_ids')  # Получаем список ID пользователей
 
-        if not user:
-            flash("Пользователь не найден", "error")
-            conn.close()
+        if not user_ids:
+            flash("Не выбраны пользователи для удаления", "error")
             return redirect(url_for('admin_users'))
 
-        # Если это админ, проверяем, сколько админов осталось
-        if user and user["role"] == "admin":
-            admin_count = conn.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0]
-            app.logger.debug(f"Trying to delete user_id={user_id}, role={user['role']}, remaining admins={admin_count}")
-            if admin_count <= 1:
-                conn.close()
-                flash("Нельзя удалить последнего администратора!", "error")
-                return redirect(url_for('admin_users'))
+        # Проверяем, сколько администраторов осталось после удаления
+        for user_id in user_ids:
+            user = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
 
-        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+            if user and user["role"] == "admin":
+                admin_count = conn.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0]
+                if admin_count <= 1:
+                    conn.close()
+                    flash("Нельзя удалить последнего администратора!", "error")
+                    return redirect(url_for('admin_users'))
+
+        # Удаляем выбранных пользователей
+        conn.execute("DELETE FROM users WHERE id IN ({})".format(','.join(['?']*len(user_ids))), tuple(user_ids))
         conn.commit()
         conn.close()
-        flash("Пользователь успешно удалён", "success")
+
+        flash("Выбранные пользователи успешно удалены", "success")
         return redirect(url_for('admin_users'))
     except Exception as e:
-        app.logger.error(f"Error during user deletion: {e}")
-        flash("Ошибка при удалении пользователя", "error")
+        app.logger.error(f"Error during users deletion: {e}")
+        flash("Ошибка при удалении пользователей", "error")
         return redirect(url_for('admin_users'))
 
 @app.route("/admin/users/<int:user_id>/role", methods=["POST"])
@@ -364,6 +367,70 @@ def update_role():
     except Exception as e:
         app.logger.error(f"Ошибка при обновлении роли: {e}")
         return "Ошибка при обновлении роли", 500
+
+@app.route("/admin/users/edit/<int:user_id>", methods=["GET", "POST"])
+def edit_user(user_id):
+    try:
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+        if not user:
+            flash("Пользователь не найден", "error")
+            return redirect(url_for('admin_users'))
+
+        if request.method == "POST":
+            username = request.form["username"]
+            email = request.form["email"]
+            role = request.form["role"]
+            password = request.form["password"]
+
+            # Если пароль был изменён, то хешируем новый пароль
+            if password:
+                password_hash = generate_password_hash(password)
+                conn.execute("UPDATE users SET username = ?, email = ?, role = ?, password = ? WHERE id = ?",
+                             (username, email, role, password_hash, user_id))
+            else:
+                conn.execute("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?",
+                             (username, email, role, user_id))
+
+            conn.commit()
+            conn.close()
+            flash("Данные пользователя успешно обновлены", "success")
+            return redirect(url_for('admin_users'))
+
+        return render_template('edit_user.html', user=user)
+    
+    except Exception as e:
+        app.logger.error(f"Error during user update: {e}")
+        flash("Ошибка при обновлении данных пользователя", "error")
+        return redirect(url_for('admin_users'))
+
+@app.route("/admin/users/create_user", methods=["POST"])
+def create_user():
+    username = request.form["username"]
+    email = request.form["email"]
+    role = request.form["role"]
+    password = request.form["password"]
+
+    if not username or not email or not role or not password:
+        flash("Все поля обязательны", "error")
+        return redirect(url_for('admin_users'))
+
+    try:
+        password_hash = generate_password_hash(password)
+        conn = get_db_connection()
+        conn.execute(
+            "INSERT INTO users (username, email, role, password) VALUES (?, ?, ?, ?)",
+            (username, email, role, password_hash)
+        )
+        conn.commit()
+        conn.close()
+        flash("Пользователь успешно создан", "success")
+    except Exception as e:
+        app.logger.error(f"Ошибка при создании пользователя: {e}")
+        flash("Ошибка при создании пользователя", "error")
+
+    return redirect(url_for('admin_users'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

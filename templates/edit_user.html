@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование пользователя{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Редактирование пользователя</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="username" class="form-label">Имя пользователя</label>
+        <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="role" class="form-label">Роль</label>
+        <select class="form-select" name="role" required>
+            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
+            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+            <option value="client" {% if user.role == 'client' %}selected{% endif %}>client</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Новый пароль (не обязательно)</label>
+        <input type="password" class="form-control" name="password">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Обновить</button>
+</form>
+
+<a href="{{ url_for('admin_users') }}" class="btn btn-secondary mt-3">Назад к пользователям</a>
+{% endblock %}
