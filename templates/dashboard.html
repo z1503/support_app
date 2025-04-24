@@ -1,40 +1,49 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Панель заявок</title>
-</head>
-<body>
-    <h2>Добро пожаловать, {{ session.user }}!</h2>
-    <p>Ваша роль: {{ session.role }}</p>
-    
-    <a href="{{ url_for('profile') }}">Изменить профиль</a>
-    <a href="/create">Создать новую заявку</a> |
-    {% if session.role == 'admin' %}
-    <a href="/admin_dashboard">Панель администратора</a> |
-    {% endif %}
-    <a href="/logout">Выйти</a>
+{% extends "base.html" %}
 
-    <h3>Список заявок</h3>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Отправитель</th>
-            <th>Тема</th>
-            <th>Статус</th>
-            <th>Дата</th>
-            <th>Действия</th>
-        </tr>
-        {% for ticket in tickets %}
-        <tr>
-            <td>{{ ticket.id }}</td>
-            <td>{{ ticket.sender }}</td>
-            <td>{{ ticket.subject }}</td>
-            <td>{{ ticket.status }}</td>
-            <td>{{ ticket.created_at }}</td>
-            <td><a href="/ticket/{{ ticket.id }}">Просмотр</a></td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+{% block title %}Панель заявок{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Панель заявок</h2>
+        <a class="btn btn-success" href="/create">Создать новую заявку</a>
+    </div>
+
+    <p class="text-muted">Роль пользователя: <strong>{{ session.role }}</strong></p>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Отправитель</th>
+                    <th>Тема</th>
+                    <th>Статус</th>
+                    <th>Дата</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.sender }}</td>
+                    <td>{{ ticket.subject }}</td>
+                    <td>
+                        {% if ticket.status == 'открыта' %}
+                            <span class="badge bg-success">Открыта</span>
+                        {% elif ticket.status == 'в работе' %}
+                            <span class="badge bg-warning text-dark">В работе</span>
+                        {% elif ticket.status == 'закрыта' %}
+                            <span class="badge bg-secondary">Закрыта</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ ticket.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ticket.created_at }}</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="/ticket/{{ ticket.id }}">Просмотр</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

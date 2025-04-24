@@ -1,24 +1,28 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Создать заявку</title>
-</head>
-<body>
-    <h2>Создание новой заявки</h2>
-    <form method="POST">
-        <label for="sender">Ваше имя:</label><br>
-        <input type="text" name="sender" required><br><br>
+{% extends "base.html" %}
 
-        <label for="subject">Тема:</label><br>
-        <input type="text" name="subject" required><br><br>
+{% block title %}Создать заявку{% endblock %}
 
-        <label for="body">Описание:</label><br>
-        <textarea name="body" rows="5" cols="40" required></textarea><br><br>
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4">Создание новой заявки</h2>
+        <form method="POST" class="needs-validation" novalidate>
+            <div class="mb-3">
+                <label for="sender" class="form-label">Имя:</label>
+                <input type="text" class="form-control" name="sender" required>
+            </div>
 
-        <button type="submit">Отправить заявку</button>
-    </form>
-    <br>
-    <a href="/dashboard">Назад к списку заявок</a>
-</body>
-</html>
+            <div class="mb-3">
+                <label for="subject" class="form-label">Тема:</label>
+                <input type="text" class="form-control" name="subject" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="body" class="form-label">Описание:</label>
+                <textarea name="body" class="form-control" rows="5" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Отправить заявку</button>
+            <a href="/dashboard" class="btn btn-secondary ms-2">Назад</a>
+        </form>
+    </div>
+{% endblock %}

@@ -1,27 +1,10 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Админ-панель</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-</head>
-<body>
-    <header>
-        <h1>Административная панель</h1>
-        <nav>
-            <a href="/dashboard">Все заявки</a>
-            <a href="/logout">Выход</a>
-            <a href="{{ url_for('admin_users') }}">Управление пользователями</a>
-        </nav>
-    </header>
+{% extends "base.html" %}
 
-    <main>
-        <h2>Добро пожаловать, {{ session['user'] }} (роль: {{ session['role'] }})</h2>
-        <p>Здесь будет размещена статистика, управление пользователями и другие функции.</p>
-    </main>
+{% block title %}Админ-панель{% endblock %}
 
-    <footer>
-        <p>&copy; {{ 2025 }}</p>
-    </footer>
-</body>
-</html>
+{% block content %}
+    <h2 class="mb-3">Добро пожаловать, {{ session['user'] }} 
+        <small class="text-muted">(роль: {{ session['role'] }})</small>
+    </h2>
+    <p class="lead">Здесь будет размещена статистика, управление пользователями и другие функции.</p>
+{% endblock %}

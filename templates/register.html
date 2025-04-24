@@ -1,38 +1,49 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Регистрация</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .error { color: red; margin-bottom: 10px; }
-        input, button { display: block; margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <h1>Регистрация</h1>
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4 text-center">Регистрация</h2>
 
     {% if error %}
-        <div class="error">{{ error }}</div>
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
     {% endif %}
 
     <form method="POST">
-        <label for="username">Имя пользователя:</label>
-        <input type="text" name="username" id="username" required>
-    
-        <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required
-               pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-               title="Введите корректный email, например: name@example.com"
-               placeholder="example@domain.com">
-    
-        <label for="password">Пароль:</label>
-        <input type="password" name="password" id="password" required>
-    
-        <button type="submit">Зарегистрироваться</button>
-    </form>
-    
+        <div class="mb-3">
+            <label for="username" class="form-label">Имя пользователя:</label>
+            <input type="text" class="form-control" name="username" id="username" required>
+        </div>
 
-    <p><a href="{{ url_for('login') }}">Уже зарегистрированы? Войти</a></p>
-</body>
-</html>
+        <div class="mb-3">
+            <label for="email" class="form-label">Электронная почта:</label>
+            <input type="email" class="form-control" name="email" id="email" required
+                   pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                   title="Введите корректный email, например: name@example.com"
+                   placeholder="example@domain.com">
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль:</label>
+            <input type="password" class="form-control" name="password" id="password" required>
+        </div>
+
+        <div class="mb-4">
+            <label for="role" class="form-label">Роль:</label>
+            <select class="form-select" id="role" name="role">
+                <option value="client">Клиент</option>
+                <option value="admin">Администратор</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+    </form>
+
+    <div class="mt-3 text-center">
+        <a href="{{ url_for('login') }}">Уже есть аккаунт? Войдите</a>
+    </div>
+</div>
+{% endblock %}

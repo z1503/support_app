@@ -1,28 +1,31 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Заявка #{{ ticket.id }}</title>
-</head>
-<body>
-    <h2>Заявка #{{ ticket.id }}</h2>
-    <p><strong>Отправитель:</strong> {{ ticket.sender }}</p>
-    <p><strong>Тема:</strong> {{ ticket.subject }}</p>
-    <p><strong>Описание:</strong> {{ ticket.body }}</p>
-    <p><strong>Статус:</strong> {{ ticket.status }}</p>
-    <p><strong>Дата создания:</strong> {{ ticket.created_at }}</p>
+{% extends "base.html" %}
 
-    <form method="POST">
-        <label for="status">Изменить статус:</label>
-        <select name="status">
-            <option value="новая" {% if ticket.status == "новая" %}selected{% endif %}>Новая</option>
-            <option value="в работе" {% if ticket.status == "в работе" %}selected{% endif %}>В работе</option>
-            <option value="завершена" {% if ticket.status == "завершена" %}selected{% endif %}>Завершена</option>
-        </select>
-        <button type="submit">Обновить</button>
+{% block title %}Заявка #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Заявка #{{ ticket.id }}</h2>
+
+    <ul class="list-group mb-4">
+        <li class="list-group-item"><strong>Отправитель:</strong> {{ ticket.sender }}</li>
+        <li class="list-group-item"><strong>Тема:</strong> {{ ticket.subject }}</li>
+        <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body }}</li>
+        <li class="list-group-item"><strong>Статус:</strong> {{ ticket.status }}</li>
+        <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at }}</li>
+    </ul>
+
+    <form method="POST" class="mb-3">
+        <div class="mb-3">
+            <label for="status" class="form-label">Изменить статус:</label>
+            <select name="status" id="status" class="form-select">
+                <option value="новая" {% if ticket.status == "новая" %}selected{% endif %}>Новая</option>
+                <option value="в работе" {% if ticket.status == "в работе" %}selected{% endif %}>В работе</option>
+                <option value="завершена" {% if ticket.status == "завершена" %}selected{% endif %}>Завершена</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Обновить</button>
     </form>
 
-    <br>
-    <a href="/dashboard">Назад к списку заявок</a>
-</body>
-</html>
+    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Назад к списку заявок</a>
+</div>
+{% endblock %}
