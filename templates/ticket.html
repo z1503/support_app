@@ -12,8 +12,16 @@
         <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body }}</li>
         <li class="list-group-item"><strong>Статус:</strong> {{ ticket.status }}</li>
         <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at }}</li>
+        <li class="list-group-item"><strong>Ответственный:</strong> 
+            {% if ticket.assigned_username %}
+                {{ ticket.assigned_username }}
+            {% else %}
+                Не назначен
+            {% endif %}
+        </li>
     </ul>
 
+    {% if session["role"] in ["admin", "user"] %}
     <form method="POST" class="mb-3">
         <div class="mb-3">
             <label for="status" class="form-label">Изменить статус:</label>
@@ -23,12 +31,22 @@
                 <option value="завершена" {% if ticket.status == 'завершена' %}selected{% endif %}>Завершена</option>
             </select>
         </div>
+
+        <div class="mb-3">
+            <label for="assigned_to" class="form-label">Ответственный пользователь:</label>
+            <select name="assigned_to" class="form-select">
+                <option value="">Не назначать</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if ticket.assigned_to == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
         <button type="submit" class="btn btn-primary">Обновить</button>
     </form>
-
-    <form method="POST" action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" onsubmit="return confirm('Удалить эту заявку?')" class="mb-3">
-        <button type="submit" class="btn btn-danger">Удалить заявку</button>
-    </form>
+    {% endif %}
 
     <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Назад к списку заявок</a>
 </div>

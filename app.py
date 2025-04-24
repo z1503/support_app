@@ -146,18 +146,24 @@ def register():
 @login_required
 def dashboard():
     conn = get_db_connection()
+    role = session.get("role")
+    user_id = session.get("user_id")
 
-    if session["role"] == "client":
-        # Показываем только заявки пользователя
-        tickets = conn.execute(
-            "SELECT id, sender, subject, status, created_at FROM tickets WHERE sender = ? ORDER BY created_at DESC",
-            (session["user"],)
-        ).fetchall()
+    if role == "client":
+        tickets = conn.execute("""
+            SELECT t.*, u.username AS assigned_username
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE t.user_id = ?
+            ORDER BY t.created_at DESC
+        """, (user_id,)).fetchall()
     else:
-        # Показываем все заявки
-        tickets = conn.execute(
-            "SELECT id, sender, subject, status, created_at FROM tickets ORDER BY created_at DESC"
-        ).fetchall()
+        tickets = conn.execute("""
+            SELECT t.*, u.username AS assigned_username
+            FROM tickets t
+            LEFT JOIN users u ON t.assigned_to = u.id
+            ORDER BY t.created_at DESC
+        """).fetchall()
 
     conn.close()
     return render_template("dashboard.html", tickets=tickets)
@@ -192,23 +198,33 @@ def create():
 
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
 @login_required
-def view_ticket(ticket_id):
+def ticket(ticket_id):
     conn = get_db_connection()
     ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+    
+    # Если заявка не найдена
+    if ticket is None:
+        return redirect(url_for('dashboard'))
 
-    if not ticket:
-        conn.close()
-        return "Заявка не найдена", 404
+    users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
 
+    # Обработка изменения статуса и назначения ответственного
     if request.method == "POST":
-        new_status = request.form["status"]
-        conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (new_status, ticket_id))
+        status = request.form.get("status")
+        assigned_to = request.form.get("assigned_to")
+
+        if status:
+            conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (status, ticket_id))
+        
+        if assigned_to:
+            conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (assigned_to, ticket_id))
+
         conn.commit()
-        conn.close()
-        return redirect(url_for("dashboard"))
+        return redirect(url_for('ticket', ticket_id=ticket_id))
 
     conn.close()
-    return render_template("ticket.html", ticket=ticket)
+    # Преобразуем ticket в словарь для использования в шаблоне
+    return render_template("ticket.html", ticket=ticket, users=users)
 
 @app.route("/logout")
 def logout():
@@ -478,16 +494,12 @@ def delete_selected_tickets():
 def delete_ticket(ticket_id):
     conn = get_db_connection()
 
-    # Проверяем роль пользователя
-    user_role = session.get("role")
-    
-    # Если роль клиента, он не может удалять заявки
-    if user_role == "client":
-        flash("У вас нет прав для удаления заявок", "error")
+    # Проверка: если роль клиента, он не может удалять заявки
+    if session["role"] == "client":
+        flash("У вас нет прав для удаления заявки", "error")
         conn.close()
         return redirect(url_for("dashboard"))
-    
-    # Если пользователь админ или обычный пользователь (user), он может удалять все заявки
+
     conn.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
     conn.commit()
     conn.close()

@@ -17,6 +17,7 @@
                     <th>ID</th>
                     <th>Отправитель</th>
                     <th>Тема</th>
+                    <th>Ответственный</th>
                     <th>Статус</th>
                     <th>Дата</th>
                     <th>Действия</th>
@@ -29,6 +30,13 @@
                     <td>{{ ticket.id }}</td>
                     <td>{{ ticket.sender }}</td>
                     <td>{{ ticket.subject }}</td>
+                    <td>
+                        {% if ticket.assigned_username %}
+                            {{ ticket.assigned_username }}
+                        {% else %}
+                            <span class="text-muted">Не назначен</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if ticket.status == 'открыта' %}
                             <span class="badge bg-success">Открыта</span>
@@ -48,9 +56,11 @@
         </table>
     </div>
 
-    <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Удалить выбранные заявки?')">
-        Удалить выбранные
-    </button>
+    {% if session["role"] != "client" %}
+        <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Удалить выбранные заявки?')">
+            Удалить выбранные
+        </button>
+    {% endif %}
 </form>
 
 <script>
