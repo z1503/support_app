@@ -1,28 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Создать заявку{% endblock %}
+{% block title %}Создание заявки{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h2 class="mb-4">Создание новой заявки</h2>
-        <form method="POST" class="needs-validation" novalidate>
-            <div class="mb-3">
-                <label for="sender" class="form-label">Имя:</label>
-                <input type="text" class="form-control" name="sender" required>
-            </div>
+<h2 class="mb-4">Создать новую заявку</h2>
 
-            <div class="mb-3">
-                <label for="subject" class="form-label">Тема:</label>
-                <input type="text" class="form-control" name="subject" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="body" class="form-label">Описание:</label>
-                <textarea name="body" class="form-control" rows="5" required></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Отправить заявку</button>
-            <a href="/dashboard" class="btn btn-secondary ms-2">Назад</a>
-        </form>
+<form method="POST">
+    <div class="mb-3">
+        <label for="subject" class="form-label">Тема</label>
+        <input type="text" name="subject" class="form-control" id="subject" required>
     </div>
+    <div class="mb-3">
+        <label for="body" class="form-label">Описание</label>
+        <textarea name="body" class="form-control" id="body" rows="5" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Создать</button>
+</form>
 {% endblock %}

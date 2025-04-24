@@ -17,13 +17,17 @@
     <form method="POST" class="mb-3">
         <div class="mb-3">
             <label for="status" class="form-label">Изменить статус:</label>
-            <select name="status" id="status" class="form-select">
-                <option value="новая" {% if ticket.status == "новая" %}selected{% endif %}>Новая</option>
-                <option value="в работе" {% if ticket.status == "в работе" %}selected{% endif %}>В работе</option>
-                <option value="завершена" {% if ticket.status == "завершена" %}selected{% endif %}>Завершена</option>
+            <select name="status" class="form-select" required>
+                <option value="новая" {% if ticket.status == 'новая' %}selected{% endif %}>Новая</option>
+                <option value="в работе" {% if ticket.status == 'в работе' %}selected{% endif %}>В работе</option>
+                <option value="завершена" {% if ticket.status == 'завершена' %}selected{% endif %}>Завершена</option>
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Обновить</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" onsubmit="return confirm('Удалить эту заявку?')" class="mb-3">
+        <button type="submit" class="btn btn-danger">Удалить заявку</button>
     </form>
 
     <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Назад к списку заявок</a>

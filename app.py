@@ -166,14 +166,28 @@ def dashboard():
 @login_required
 def create():
     if request.method == "POST":
-        sender = request.form["sender"]
-        subject = request.form["subject"]
-        body = request.form["body"]
+        subject = request.form.get("subject", "").strip()
+        body = request.form.get("body", "").strip()
+        user_id = session["user_id"]
+        sender = session["user"]  # Имя пользователя из сессии
+        status = "новая"
+
+        # Валидация полей
+        if not subject or not body:
+            flash("Все поля должны быть заполнены", "error")
+            return redirect(url_for("create"))
+
         conn = get_db_connection()
-        conn.execute("INSERT INTO tickets (sender, subject, body) VALUES (?, ?, ?)", (sender, subject, body))
+        conn.execute(
+            "INSERT INTO tickets (sender, subject, body, status, user_id) VALUES (?, ?, ?, ?, ?)",
+            (sender, subject, body, status, user_id)
+        )
         conn.commit()
         conn.close()
-        return redirect("/dashboard")
+
+        flash("Заявка успешно создана", "success")
+        return redirect(url_for("dashboard"))
+
     return render_template("create.html")
 
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
@@ -431,6 +445,54 @@ def create_user():
         flash("Ошибка при создании пользователя", "error")
 
     return redirect(url_for('admin_users'))
+
+@app.route("/delete_selected_tickets", methods=["POST"])
+@login_required
+def delete_selected_tickets():
+    if "ticket_ids" not in request.form:
+        flash("Выберите заявки для удаления", "error")
+        return redirect(url_for("dashboard"))
+
+    ticket_ids = request.form.getlist("ticket_ids")
+
+    try:
+        conn = get_db_connection()
+        for ticket_id in ticket_ids:
+            # Только свои заявки можно удалять, если не admin
+            if session.get("role") != "admin":
+                ticket = conn.execute("SELECT user_id FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+                if not ticket or ticket["user_id"] != session["user_id"]:
+                    continue
+            conn.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
+        conn.commit()
+        conn.close()
+        flash("Выбранные заявки удалены", "success")
+    except Exception as e:
+        app.logger.error(f"Ошибка при удалении заявок: {e}")
+        flash("Ошибка при удалении заявок", "error")
+
+    return redirect(url_for("dashboard"))
+
+@app.route("/ticket/delete/<int:ticket_id>", methods=["POST"])
+@login_required
+def delete_ticket(ticket_id):
+    conn = get_db_connection()
+
+    # Проверяем роль пользователя
+    user_role = session.get("role")
+    
+    # Если роль клиента, он не может удалять заявки
+    if user_role == "client":
+        flash("У вас нет прав для удаления заявок", "error")
+        conn.close()
+        return redirect(url_for("dashboard"))
+    
+    # Если пользователь админ или обычный пользователь (user), он может удалять все заявки
+    conn.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
+    conn.commit()
+    conn.close()
+    flash("Заявка удалена", "success")
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
