@@ -11,6 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from flask import flash, session
+from email.header import decode_header
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
@@ -53,6 +55,16 @@ def role_required(role):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+def decode_sender(encoded_sender):
+    decoded_parts = decode_header(encoded_sender)
+    decoded_str = ""
+    for part, encoding in decoded_parts:
+        if isinstance(part, bytes):
+            decoded_str += part.decode(encoding or "utf-8")
+        else:
+            decoded_str += part
+    return decoded_str
 
 # Функция отправки письма с подтверждением
 def send_confirmation_email(email, username="Пользователь"):
@@ -165,6 +177,10 @@ def dashboard():
             ORDER BY t.created_at DESC
         """).fetchall()
 
+    tickets = [dict(ticket) for ticket in tickets]
+    for ticket in tickets:
+        ticket["sender"] = decode_sender(ticket["sender"])
+
     conn.close()
     return render_template("dashboard.html", tickets=tickets)
 
@@ -201,12 +217,18 @@ def create():
 def ticket(ticket_id):
     conn = get_db_connection()
     ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-    
+
     # Если заявка не найдена
     if ticket is None:
         return redirect(url_for('dashboard'))
 
     users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
+
+    # Преобразуем ticket в обычный словарь, чтобы можно было модифицировать
+    ticket_dict = dict(ticket)
+
+    # Преобразуем строку в datetime объект для правильного отображения
+    ticket_dict["created_at"] = datetime.strptime(ticket_dict["created_at"], "%Y-%m-%d %H:%M:%S")
 
     # Обработка изменения статуса и назначения ответственного
     if request.method == "POST":
@@ -223,8 +245,9 @@ def ticket(ticket_id):
         return redirect(url_for('ticket', ticket_id=ticket_id))
 
     conn.close()
-    # Преобразуем ticket в словарь для использования в шаблоне
-    return render_template("ticket.html", ticket=ticket, users=users)
+
+    # Передаем в шаблон обновленный ticket_dict
+    return render_template("ticket.html", ticket=ticket_dict, users=users)
 
 @app.route("/logout")
 def logout():

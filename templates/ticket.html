@@ -11,7 +11,7 @@
         <li class="list-group-item"><strong>Тема:</strong> {{ ticket.subject }}</li>
         <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body }}</li>
         <li class="list-group-item"><strong>Статус:</strong> {{ ticket.status }}</li>
-        <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at }}</li>
+        <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at.strftime("%d-%m-%Y %H:%M:%S") }}</li>
         <li class="list-group-item"><strong>Ответственный:</strong> 
             {% if ticket.assigned_username %}
                 {{ ticket.assigned_username }}
