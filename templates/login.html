@@ -1,38 +1,37 @@
-{% extends "base.html" %}
+{% extends "base_auth.html" %}
 
 {% block title %}Вход в систему{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 400px;">
-    <h2 class="mb-4 text-center">Вход в систему</h2>
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
+        <h3 class="text-center mb-4">Вход в систему</h3>
 
-    {% if error %}
-        <div class="alert alert-danger">
-            {{ error }}
+        {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="mb-3">
+                <label for="username_or_email" class="form-label">Имя пользователя или Email</label>
+                <input type="text" class="form-control" name="username_or_email" id="username_or_email" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" name="password" id="password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+
+        <hr>
+
+        <div class="text-center">
+            <a href="/register" class="btn btn-link">Нет аккаунта? Зарегистрироваться</a>
         </div>
-    {% endif %}
-
-    <form method="POST">
-        <!-- Поле для имени пользователя или email -->
-        <div class="mb-3">
-            <label for="username_or_email" class="form-label">Имя пользователя или Email</label>
-            <input type="text" class="form-control" name="username_or_email" id="username_or_email" required>
-        </div>
-
-        <!-- Поле для пароля -->
-        <div class="mb-3">
-            <label for="password" class="form-label">Пароль</label>
-            <input type="password" class="form-control" name="password" id="password" required>
-        </div>
-
-        <!-- Кнопка входа -->
-        <button type="submit" class="btn btn-primary w-100">Войти</button>
-    </form>
-
-    <hr>
-
-    <div class="text-center">
-        <a href="/register" class="btn btn-link">Нет аккаунта? Зарегистрироваться</a>
     </div>
 </div>
 {% endblock %}
