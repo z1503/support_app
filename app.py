@@ -13,6 +13,8 @@ import smtplib
 from flask import flash, session
 from email.header import decode_header
 from datetime import datetime
+from flask import request, redirect, url_for, session, make_response
+import json
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
@@ -161,28 +163,63 @@ def dashboard():
     role = session.get("role")
     user_id = session.get("user_id")
 
+    # Параметры запроса
+    sort_by = request.args.get('sort_by', 'created_at')
+    sort_order = request.args.get('sort_order', 'desc')
+    status_filter = request.args.get('status_filter')
+    page = int(request.args.get('page', 1))
+
+    # Чтение параметра per_page из URL или cookies
+    per_page = request.args.get('per_page', request.cookies.get('per_page', 20))  # по умолчанию 20 заявок
+    per_page = int(per_page)
+
+    valid_columns = ['id', 'sender', 'subject', 'status', 'created_at']
+    if sort_by not in valid_columns:
+        sort_by = 'created_at'
+
+    query = """
+        SELECT t.*, u.username AS assigned_username
+        FROM tickets t
+        LEFT JOIN users u ON t.assigned_to = u.id
+    """
+    params = []
+
     if role == "client":
-        tickets = conn.execute("""
-            SELECT t.*, u.username AS assigned_username
-            FROM tickets t
-            LEFT JOIN users u ON t.assigned_to = u.id
-            WHERE t.user_id = ?
-            ORDER BY t.created_at DESC
-        """, (user_id,)).fetchall()
+        query += " WHERE t.user_id = ?"
+        params.append(user_id)
     else:
-        tickets = conn.execute("""
-            SELECT t.*, u.username AS assigned_username
-            FROM tickets t
-            LEFT JOIN users u ON t.assigned_to = u.id
-            ORDER BY t.created_at DESC
-        """).fetchall()
+        query += " WHERE 1=1"
 
-    tickets = [dict(ticket) for ticket in tickets]
-    for ticket in tickets:
-        ticket["sender"] = decode_sender(ticket["sender"])
+    if status_filter:
+        query += " AND t.status = ?"
+        params.append(status_filter)
 
+    # Для подсчета общего количества записей (без LIMIT)
+    count_query = "SELECT COUNT(*) FROM (" + query + ") as total"
+    total_tickets = conn.execute(count_query, params).fetchone()[0]
+
+    # Пагинация
+    offset = (page - 1) * per_page
+    query += f" ORDER BY {sort_by} {sort_order} LIMIT {per_page} OFFSET {offset}"
+
+    tickets = conn.execute(query, params).fetchall()
     conn.close()
-    return render_template("dashboard.html", tickets=tickets)
+
+    total_pages = (total_tickets + per_page - 1) // per_page  # округление вверх
+
+    # Сохранение выбора per_page в cookies
+    resp = make_response(render_template(
+        "dashboard.html",
+        tickets=tickets,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        status_filter=status_filter
+    ))
+    resp.set_cookie('per_page', str(per_page), max_age=60*60*24*30)  # Сохраняем на 30 дней
+    return resp
 
 @app.route("/create", methods=["GET", "POST"])
 @login_required
