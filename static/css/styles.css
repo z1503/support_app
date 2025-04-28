@@ -35,3 +35,54 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+table {
+    width: 100%;
+    table-layout: fixed; /* Это поможет сохранить фиксированную ширину столбцов */
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+    white-space: nowrap; /* Чтобы текст не переносился */
+}
+
+th {
+    background-color: #343a40;
+    color: white;
+}
+
+th, td {
+    min-width: 100px; /* Устанавливаем минимальную ширину для столбцов */
+}
+
+/* Для каждого столбца, который будет изменяться */
+th:nth-child(1), td:nth-child(1) {
+    width: 80px; /* Устанавливаем ширину для ID */
+}
+
+th:nth-child(2), td:nth-child(2) {
+    width: 150px; /* Устанавливаем ширину для отправителя */
+}
+
+th:nth-child(3), td:nth-child(3) {
+    width: 200px; /* Устанавливаем ширину для темы */
+}
+
+th:nth-child(4), td:nth-child(4) {
+    width: 120px; /* Устанавливаем ширину для статуса */
+}
+
+th:nth-child(5), td:nth-child(5) {
+    width: 150px; /* Устанавливаем ширину для даты */
+}
+
+th:nth-child(6), td:nth-child(6) {
+    width: 150px; /* Устанавливаем ширину для ответственного */
+}
+
+th:nth-child(7), td:nth-child(7) {
+    width: 120px; /* Устанавливаем ширину для действия */
+}

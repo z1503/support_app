@@ -3,8 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Моя система{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">  
-</head> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Фиксируем ширину таблицы и столбцов */
+        .table-responsive {
+            overflow-x: auto; /* Добавляем горизонтальную прокрутку */
+        }
+
+        table {
+            width: 100%;
+            table-layout: auto; /* Позволяет таблице адаптироваться */
+            border-collapse: collapse; /* Убираем двойные границы */
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+            white-space: nowrap; /* Текст не будет переноситься */
+        }
+
+        th {
+            background-color: #343a40;
+            color: white;
+        }
+
+        /* Устанавливаем минимальную ширину для столбцов */
+        th, td {
+            min-width: 120px; /* Минимальная ширина столбца */
+        }
+
+        /* Устанавливаем минимальную ширину для столбца с чекбоксами */
+        th:first-child, td:first-child {
+            min-width: 40px; /* Минимальная ширина для первого столбца с чекбоксами */
+        }
+
+        /* Подсветка строк при наведении */
+        .ticket-row:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
 <body class="bg-light">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
