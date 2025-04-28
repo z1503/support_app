@@ -22,60 +22,131 @@
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Применить</button>
     </div>
-
-    <!-- Кнопка сброса фильтров -->
-    <div class="col-auto">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Сбросить фильтры</a>
-    </div>
 </form>
 
 {% if tickets %}
 <form method="POST" action="{{ url_for('delete_selected_tickets') }}">
     <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-striped table-hover align-middle" style="table-layout: fixed;">
             <thead class="table-dark">
                 <tr>
                     {% if session["role"] != "client" %}
                         <th style="width: 40px;"><input type="checkbox" onclick="toggleAll(this)"></th>
                     {% endif %}
-                    {% for column, label in [
-                        ("id", "ID"),
-                        ("sender", "Отправитель"),
-                        ("subject", "Тема"),
-                        ("status", "Статус"),
-                        ("created_at", "Дата")
-                    ] %}
-                        <th class="sortable-column">
-                            <a href="{{ url_for('dashboard', sort_by=column, sort_order='asc' if sort_by != column or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                               class="text-white text-decoration-none d-flex align-items-center justify-content-between">
-                                <span>{{ label }}</span>
-                                <span class="sort-arrow">
-                                    {% if sort_by == column %}
-                                        {% if sort_order == 'asc' %}
-                                            ▲
-                                        {% else %}
-                                            ▼
-                                        {% endif %}
+                    <th class="sortable-column" style="width: 100px;">
+                        <a href="{{ url_for('dashboard', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Номер</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'id' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
                                     {% else %}
-                                        &nbsp;
+                                        ▼
                                     {% endif %}
-                                </span>
-                            </a>
-                        </th>
-                    {% endfor %}
-                    <th>Ответственный</th>
-                    <th>Действия</th>
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
+                    <th class="sortable-column" style="width: 150px;">
+                        <a href="{{ url_for('dashboard', sort_by='sender', sort_order='asc' if sort_by != 'sender' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Отправитель</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'sender' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
+                                    {% else %}
+                                        ▼
+                                    {% endif %}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
+                    <th class="sortable-column" style="width: 250px;">
+                        <a href="{{ url_for('dashboard', sort_by='subject', sort_order='asc' if sort_by != 'subject' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Тема</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'subject' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
+                                    {% else %}
+                                        ▼
+                                    {% endif %}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
+                    <th class="sortable-column" style="width: 150px;">
+                        <a href="{{ url_for('dashboard', sort_by='created_at', sort_order='asc' if sort_by != 'created_at' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Дата</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'created_at' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
+                                    {% else %}
+                                        ▼
+                                    {% endif %}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
+                    <th class="sortable-column" style="width: 100px;">
+                        <a href="{{ url_for('dashboard', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Статус</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'status' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
+                                    {% else %}
+                                        ▼
+                                    {% endif %}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
+                    <th class="sortable-column" style="width: 150px;">
+                        <a href="{{ url_for('dashboard', sort_by='assigned_username', sort_order='asc' if sort_by != 'assigned_username' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
+                           class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span>Ответственный</span>
+                            <span class="sort-arrow">
+                                {% if sort_by == 'assigned_username' %}
+                                    {% if sort_order == 'asc' %}
+                                        ▲
+                                    {% else %}
+                                        ▼
+                                    {% endif %}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            </span>
+                        </a>
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 {% for ticket in tickets %}
-                <tr class="ticket-row">
+                <tr class="ticket-row" onclick="window.location.href='/ticket/{{ ticket.id }}'">
                     {% if session["role"] != "client" %}
                         <td><input type="checkbox" name="ticket_ids" value="{{ ticket.id }}"></td>
                     {% endif %}
                     <td>{{ ticket.id }}</td>
-                    <td>{{ ticket.sender }}</td>
+                    <td>{{ ticket.sender }}</td> <!-- Добавлен столбец отправителя -->
                     <td>{{ ticket.subject }}</td>
+                    <td>{{ ticket.created_at }}</td>
                     <td>
                         {% if ticket.status == 'новая' %}
                             <span class="badge bg-success">Новая</span>
@@ -87,15 +158,7 @@
                             <span class="badge bg-light text-dark">{{ ticket.status }}</span>
                         {% endif %}
                     </td>
-                    <td>{{ ticket.created_at }}</td>
-                    <td>
-                        {% if ticket.assigned_username %}
-                            {{ ticket.assigned_username }}
-                        {% else %}
-                            <span class="text-muted">Не назначен</span>
-                        {% endif %}
-                    </td>
-                    <td><a class="btn btn-sm btn-outline-primary" href="/ticket/{{ ticket.id }}">Просмотр</a></td>
+                    <td>{{ ticket.assigned_username }}</td> <!-- Ответственный -->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -147,17 +210,42 @@
 {% endif %}
 
 <style>
-    .sortable-column a {
-        min-width: 100px;
-    }
-    .sort-arrow {
-        width: 12px;
-        display: inline-block;
-        text-align: center;
+    /* Устанавливаем фиксированную ширину для всех столбцов */
+    th, td {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
+    /* Для заголовков столбцов устанавливаем минимальную ширину */
+    th {
+        min-width: 150px;
+    }
+
+    /* Для столбца "Статус" минимальная ширина */
+    th:nth-child(5), td:nth-child(5) {
+        min-width: 100px;
+    }
+
+    /* Устанавливаем стиль для таблицы с фиксированной шириной */
+    table {
+        table-layout: fixed;
+    }
+
+    /* Эффект при наведении на строки */
     .ticket-row:hover {
         background-color: #f0f0f0;
+        cursor: pointer;
+    }
+
+    /* Для чётных строк немного другая подсветка */
+    .ticket-row:nth-child(even):hover {
+        background-color: #d6d6d6;
+    }
+
+    /* Добавляем плавность при наведении */
+    .ticket-row {
+        transition: background-color 0.3s ease;
     }
 </style>
 
