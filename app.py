@@ -173,6 +173,10 @@ def dashboard():
     per_page = request.args.get('per_page', request.cookies.get('per_page', 20))  # по умолчанию 20 заявок
     per_page = int(per_page)
 
+    # Ограничиваем значение per_page для предотвращения перегрузки
+    if per_page > 100:
+        per_page = 100  # Установите ограничение на 100 заявок на страницу
+
     valid_columns = ['id', 'sender', 'subject', 'status', 'created_at']
     if sort_by not in valid_columns:
         sort_by = 'created_at'
@@ -236,10 +240,15 @@ def create():
             flash("Все поля должны быть заполнены", "error")
             return redirect(url_for("create"))
 
+        # Получаем текущее время с учетом часового пояса Москвы
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Подключение к базе данных и вставка данных с учетом времени
         conn = get_db_connection()
         conn.execute(
-            "INSERT INTO tickets (sender, subject, body, status, user_id) VALUES (?, ?, ?, ?, ?)",
-            (sender, subject, body, status, user_id)
+            "INSERT INTO tickets (sender, subject, body, status, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (sender, subject, body, status, user_id, created_at)
         )
         conn.commit()
         conn.close()
@@ -565,6 +574,70 @@ def delete_ticket(ticket_id):
     conn.close()
     flash("Заявка удалена", "success")
     return redirect(url_for("dashboard"))
+
+@app.route("/create_public", methods=["GET", "POST"])
+def create_public_ticket():
+    if request.method == "POST":
+        sender = request.form.get("sender")
+        subject = request.form.get("subject")
+        body = request.form.get("body")
+
+        if not sender or not subject or not body:
+            flash("Пожалуйста, заполните все поля.", "danger")
+            return redirect(url_for("create_public_ticket"))
+
+        # Установим часовой пояс Москвы
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        
+        # Получим текущее время в Москве
+        created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO tickets (sender, subject, body, status, created_at) VALUES (?, ?, ?, 'новая', ?)",
+            (sender, subject, body, created_at)
+        )
+        ticket_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+
+        # Перенаправляем на страницу спасибо
+        return redirect(url_for('thank_you', ticket_id=ticket_id))
+
+    return render_template("create_public_ticket.html")
+
+@app.route("/thank_you/<int:ticket_id>")
+def thank_you(ticket_id):
+    return render_template("thank_you.html", ticket_id=ticket_id)
+
+@app.route("/confirm")
+def confirm_email():
+    email = request.args.get("email")
+    if not email:
+        flash("Некорректная ссылка подтверждения.", "danger")
+        return redirect(url_for("login"))
+
+    conn = sqlite3.connect(DB_PATH)
+    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("Пользователь не найден.", "danger")
+        return redirect(url_for("login"))
+
+    if user["is_confirmed"]:
+        conn.close()
+        flash("Email уже подтвержден.", "info")
+        return redirect(url_for("login"))
+
+    # Обновляем флаг подтверждения
+    conn.execute("UPDATE users SET is_confirmed = 1 WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
+
+    flash("Email успешно подтвержден! Теперь вы можете войти.", "success")
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

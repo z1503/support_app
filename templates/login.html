@@ -26,9 +26,12 @@
 
             <button type="submit" class="btn btn-primary w-100">Войти</button>
         </form>
-
-        <hr>
-
+        
+        <div class="text-center mt-4">
+                <a href="{{ url_for('create_public_ticket') }}" class="link-primary text-decoration-none">Оставить заявку без регистрации</a>
+            </small>
+        </div>
+        
         <div class="text-center">
             <a href="/register" class="btn btn-link">Нет аккаунта? Зарегистрироваться</a>
         </div>

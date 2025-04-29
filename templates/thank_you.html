@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Спасибо{% endblock %}
+
+{% block content %}
+<div class="text-center my-5">
+    <h2 class="mb-4">Спасибо за вашу заявку!</h2>
+    <p class="lead">Номер вашей заявки: <strong>{{ ticket_id }}</strong></p>
+    <a href="/" class="btn btn-primary mt-4">Вернуться на главную</a>
+</div>
+{% endblock %}

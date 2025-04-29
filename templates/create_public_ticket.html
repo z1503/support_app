@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Создать заявку{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <h2 class="mb-4">Создать заявку</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="post" class="p-4 border rounded bg-white shadow-sm">
+            <div class="mb-3">
+                <label for="sender" class="form-label">Ваше имя или Email</label>
+                <input type="text" class="form-control" id="sender" name="sender" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="subject" class="form-label">Тема заявки</label>
+                <input type="text" class="form-control" id="subject" name="subject" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="body" class="form-label">Описание проблемы</label>
+                <textarea class="form-control" id="body" name="body" rows="5" required></textarea>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5">Отправить заявку</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
