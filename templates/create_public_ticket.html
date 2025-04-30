@@ -36,7 +36,14 @@
 
             <div class="mb-3">
                 <label for="file" class="form-label">Вложение (необязательно)</label>
-                <input type="file" class="form-control" id="file" name="file">
+                <input type="file" class="form-control" id="file" name="files" accept=".jpg,.jpeg,.png,.pdf,.docx,.txt,.zip" multiple>
+                <small class="form-text text-muted">Поддерживаемые форматы: .jpg, .png, .pdf, .docx, .txt, .zip</small>
+            </div>
+
+            <!-- Контейнер для предпросмотра изображений -->
+            <div id="preview-container" class="mt-3" style="display: none;">
+                <label class="form-label">Предпросмотр:</label>
+                <div id="preview-images"></div>
             </div>
 
             <div class="text-center">
@@ -45,4 +52,39 @@
         </form>
     </div>
 </div>
+
+<script>
+    // Обработчик для предпросмотра изображений
+    document.getElementById('file').addEventListener('change', function(event) {
+        var files = event.target.files;
+        var previewContainer = document.getElementById('preview-container');
+        var previewImages = document.getElementById('preview-images');
+
+        // Очистить контейнер перед добавлением новых превью
+        previewImages.innerHTML = '';
+
+        if (files.length > 0) {
+            previewContainer.style.display = 'block';  // Показываем контейнер для предпросмотра
+
+            Array.from(files).forEach(function(file) {
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('img-fluid', 'rounded', 'border');
+                    img.style.maxHeight = '300px';
+                    previewImages.appendChild(img);
+                };
+
+                // Проверяем, если файл — изображение
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file);  // Читаем изображение как Data URL
+                }
+            });
+        } else {
+            previewContainer.style.display = 'none';  // Скрываем контейнер, если нет файлов
+        }
+    });
+</script>
 {% endblock %}

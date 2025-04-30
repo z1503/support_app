@@ -19,12 +19,15 @@
                 Не назначен
             {% endif %}
         </li>
+
         {% if ticket.attachment %}
         <li class="list-group-item">
-            <strong>Вложение:</strong> 
-            <a href="{{ url_for('uploaded_file', filename=ticket.attachment) }}" target="_blank">
-                {{ ticket.attachment }}
-            </a>
+            <strong>Вложения:</strong>
+            {% for file in ticket.attachment.split(',') %}
+                <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
+                    {{ file }}
+                </a><br>
+            {% endfor %}
         </li>
         {% endif %}
     </ul>

@@ -1,88 +1,101 @@
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7fc;
-    margin: 0;
-    padding: 0;
-}
+<style>
+    /* Убираем отступы и задаём высоту для HTML и Body */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
 
-.form-container {
-    max-width: 400px;
-    margin: 50px auto;
-    padding: 30px;
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+    body {
+        display: flex;
+        flex-direction: column;
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f7fc;
+    }
 
-input[type="text"], input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
+    .container {
+        flex: 1;  /* Заполняет оставшееся пространство */
+        padding: 20px;
+    }
 
-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+    footer {
+        background-color: #343a40;
+        color: white;
+        padding: 20px;
+        font-size: 14px;
+        margin-top: auto; /* Это заставит футер быть внизу */
+        text-align: center; /* Центрируем текст футера */
+    }
 
-button:hover {
-    background-color: #45a049;
-}
+    footer a {
+        color: #ffc107;
+        text-decoration: none;
+    }
 
-table {
-    width: 100%;
-    table-layout: fixed; /* Это поможет сохранить фиксированную ширину столбцов */
-    border-collapse: collapse;
-}
+    footer a:hover {
+        text-decoration: underline;
+    }
 
-th, td {
-    padding: 8px;
-    text-align: left;
-    border: 1px solid #ddd;
-    white-space: nowrap; /* Чтобы текст не переносился */
-}
+    /* Стили для формы */
+    .form-container {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-th {
-    background-color: #343a40;
-    color: white;
-}
+    input[type="text"], input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
 
-th, td {
-    min-width: 100px; /* Устанавливаем минимальную ширину для столбцов */
-}
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
 
-/* Для каждого столбца, который будет изменяться */
-th:nth-child(1), td:nth-child(1) {
-    width: 80px; /* Устанавливаем ширину для ID */
-}
+    button:hover {
+        background-color: #45a049;
+    }
 
-th:nth-child(2), td:nth-child(2) {
-    width: 150px; /* Устанавливаем ширину для отправителя */
-}
+    /* Стили для таблиц */
+    table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
 
-th:nth-child(3), td:nth-child(3) {
-    width: 200px; /* Устанавливаем ширину для темы */
-}
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+        white-space: nowrap;
+    }
 
-th:nth-child(4), td:nth-child(4) {
-    width: 120px; /* Устанавливаем ширину для статуса */
-}
+    th {
+        background-color: #343a40;
+        color: white;
+    }
 
-th:nth-child(5), td:nth-child(5) {
-    width: 150px; /* Устанавливаем ширину для даты */
-}
+    th, td {
+        min-width: 100px;
+    }
 
-th:nth-child(6), td:nth-child(6) {
-    width: 150px; /* Устанавливаем ширину для ответственного */
-}
-
-th:nth-child(7), td:nth-child(7) {
-    width: 120px; /* Устанавливаем ширину для действия */
-}
+    /* Индивидуальные стили для каждого столбца */
+    th:nth-child(1), td:nth-child(1) { width: 80px; }
+    th:nth-child(2), td:nth-child(2) { width: 150px; }
+    th:nth-child(3), td:nth-child(3) { width: 200px; }
+    th:nth-child(4), td:nth-child(4) { width: 120px; }
+    th:nth-child(5), td:nth-child(5) { width: 150px; }
+    th:nth-child(6), td:nth-child(6) { width: 150px; }
+    th:nth-child(7), td:nth-child(7) { width: 120px; }
+</style>

@@ -6,6 +6,15 @@
 <div class="container text-center mt-5">
     <h2>Спасибо!</h2>
     <p>Ваша заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.</p>
+    
     <a class="btn btn-primary mt-3" href="{{ url_for('create_public_ticket') }}">Создать ещё одну</a>
+    
+    {% if session.get("user_id") %}
+        <!-- Если пользователь авторизован, показываем кнопку для возвращения к списку заявок -->
+        <a class="btn btn-secondary mt-3" href="{{ url_for('dashboard') }}">Вернуться к списку заявок</a>
+    {% else %}
+        <!-- Если пользователь не авторизован, показываем кнопку для регистрации -->
+        <a class="btn btn-secondary mt-3" href="{{ url_for('register') }}">Перейти к регистрации</a>
+    {% endif %}
 </div>
 {% endblock %}

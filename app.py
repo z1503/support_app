@@ -39,13 +39,12 @@ app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 
 # Настройки для загрузки файлов
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB лимит
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'txt', 'zip'}
 
 # Инициализация Flask-Mail
 mail = Mail(app)
-
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -246,31 +245,40 @@ def create():
     if request.method == "POST":
         subject = request.form.get("subject", "").strip()
         body = request.form.get("body", "").strip()
-        user_id = session["user_id"]
-        sender = session["user"]
+        user_id = session.get("user_id")
+        sender = session.get("user")
         status = "новая"
 
-        # Валидация
         if not subject or not body:
-            flash("Все поля должны быть заполнены", "error")
+            flash("Все поля должны быть заполнены", "danger")
             return redirect(url_for("create"))
 
-        # Текущая дата/время в часовом поясе Москвы
+        # Часовой пояс Москвы
         moscow_tz = pytz.timezone('Europe/Moscow')
         created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Обработка файла
-        file = request.files.get("file")
-        filename = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # Работа с файлами
+        attachment = []
+        files = request.files.getlist("files[]")  # Получаем список всех файлов
 
-        # Запись в базу данных
+        for file in files:
+            if file.filename:  # Проверка, что файл выбран
+                if allowed_file(file.filename):  # Проверка допустимости формата
+                    filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # Сохранение файла
+                    attachment.append(filename)  # Добавление имени файла в список
+                else:
+                    flash("Неподдерживаемый формат файла. Разрешены: jpg, jpeg, png, pdf, docx, txt", "danger")
+                    return redirect(url_for("create"))
+
+        # Преобразуем список файлов в строку, разделённую запятой
+        attachment_str = ",".join(attachment) if attachment else None
+
+        # Сохранение заявки в базу данных
         conn = get_db_connection()
         conn.execute(
             "INSERT INTO tickets (sender, subject, body, status, user_id, created_at, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (sender, subject, body, status, user_id, created_at, filename)
+            (sender, subject, body, status, user_id, created_at, attachment_str)
         )
         conn.commit()
         conn.close()
@@ -613,23 +621,38 @@ def create_public_ticket():
             flash("Пожалуйста, заполните все поля.", "danger")
             return redirect(url_for("create_public_ticket"))
 
-        # Установим часовой пояс Москвы
+        # Обработка нескольких вложений
+        attachments = []
+        files = request.files.getlist("files")  # Получаем список файлов
+        for file in files:
+            if file.filename != '':  # Если файл не пустой
+                if allowed_file(file.filename):  # Проверяем формат
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    attachments.append(filename)
+                else:
+                    flash("Неподдерживаемый формат файла. Допустимые форматы: jpg, jpeg, png, pdf, docx, txt", "danger")
+                    return redirect(url_for("create_public_ticket"))
+
+        # Если вложений несколько, то сохраняем их как строку, разделённую запятой
+        attachment_str = ','.join(attachments) if attachments else None
+
+        # Время в часовом поясе Москвы
         moscow_tz = pytz.timezone('Europe/Moscow')
-        
-        # Получим текущее время в Москве
         created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 
+        # Сохранение заявки в БД
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO tickets (sender, subject, body, status, created_at) VALUES (?, ?, ?, 'новая', ?)",
-            (sender, subject, body, created_at)
+            "INSERT INTO tickets (sender, subject, body, attachment, status, created_at) VALUES (?, ?, ?, ?, 'новая', ?)",
+            (sender, subject, body, attachment_str, created_at)
         )
         ticket_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
-        # Перенаправляем на страницу спасибо
         return redirect(url_for('thank_you', ticket_id=ticket_id))
 
     return render_template("create_public_ticket.html")
@@ -666,8 +689,50 @@ def confirm_email():
     flash("Email успешно подтвержден! Теперь вы можете войти.", "success")
     return redirect(url_for("login"))
 
+from flask import send_from_directory, Response
+import mimetypes
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Проверяем MIME-тип файла
+    mime_type, _ = mimetypes.guess_type(file_path)
+
+    # Если MIME-тип для файла найден, то пытаемся его отдать как просмотр в браузере
+    if mime_type and mime_type.startswith('image'):
+        # Для изображений отправляем как обычный файл, чтобы браузер их отображал
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mime_type)
+    elif mime_type == 'application/pdf':
+        # Для PDF отправляем как просмотр в браузере
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mime_type)
+    else:
+        # Для других типов файлов по умолчанию мы отдаем их для скачивания
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        logging.error("No file part")
+        return 'No file part'
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        logging.error("No selected file")
+        return 'No selected file'
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        logging.info(f"File {filename} saved to {app.config['UPLOAD_FOLDER']}")
+        return redirect(url_for('uploaded_file', filename=filename))
+    
+    logging.error("File type not allowed")
+    return 'File not allowed'
+
+@app.route('/uploads/<filename>')
+def serve_uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == "__main__":

@@ -5,6 +5,17 @@
 {% block content %}
 <h2 class="mb-4">Создать новую заявку</h2>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <form method="POST" enctype="multipart/form-data">
     <div class="mb-3">
         <label for="subject" class="form-label">Тема</label>
@@ -14,10 +25,55 @@
         <label for="body" class="form-label">Описание</label>
         <textarea name="body" class="form-control" id="body" rows="5" required></textarea>
     </div>
-    <div class="mb-3">
-        <label for="file" class="form-label">Вложение (необязательно)</label>
-        <input type="file" name="file" class="form-control" id="file">
+
+    <div id="files-container">
+        <div class="mb-3 file-field">
+            <label for="file" class="form-label">Вложение (необязательно)</label>
+            <input type="file" class="form-control" name="files[]" multiple>
+            <small class="form-text text-muted">Поддерживаемые форматы: .jpg, .png, .pdf, .docx. Можно выбрать несколько файлов. Каждый не более 16мб.</small>
+        </div>
     </div>
+
+    <div id="preview-container" class="mt-3" style="display: none;">
+        <label class="form-label">Предпросмотр:</label>
+        <div id="preview-images"></div>
+    </div>
+    
     <button type="submit" class="btn btn-primary">Создать</button>
 </form>
+
+<script>
+    // Обработчик предпросмотра изображений
+    document.getElementById('files-container').addEventListener('change', function(event) {
+        var files = event.target.files;
+        var previewContainer = document.getElementById('preview-container');
+        var previewImages = document.getElementById('preview-images');
+        
+        // Очистить контейнер перед добавлением новых превью
+        previewImages.innerHTML = '';
+        
+        if (files.length > 0) {
+            previewContainer.style.display = 'block';
+            
+            Array.from(files).forEach(function(file) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('img-fluid', 'rounded', 'border');
+                    img.style.maxHeight = '300px';
+                    previewImages.appendChild(img);
+                };
+                
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file); // Читаем файл как изображение
+                }
+            });
+        } else {
+            previewContainer.style.display = 'none'; // Скрыть контейнер, если нет файлов
+        }
+    });
+</script>
+
 {% endblock %}
