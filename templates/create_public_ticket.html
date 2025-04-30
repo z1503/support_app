@@ -5,7 +5,6 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-
         <h2 class="mb-4">Создать заявку</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -19,7 +18,7 @@
             {% endif %}
         {% endwith %}
 
-        <form method="post" class="p-4 border rounded bg-white shadow-sm">
+        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm">
             <div class="mb-3">
                 <label for="sender" class="form-label">Ваше имя или Email</label>
                 <input type="text" class="form-control" id="sender" name="sender" required>
@@ -35,11 +34,15 @@
                 <textarea class="form-control" id="body" name="body" rows="5" required></textarea>
             </div>
 
+            <div class="mb-3">
+                <label for="file" class="form-label">Вложение (необязательно)</label>
+                <input type="file" class="form-control" id="file" name="file">
+            </div>
+
             <div class="text-center">
                 <button type="submit" class="btn btn-primary btn-lg px-5">Отправить заявку</button>
             </div>
         </form>
-
     </div>
 </div>
 {% endblock %}

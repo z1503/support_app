@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, flash, send_from_directory, make_response
 from flask_mail import Mail, Message
 import sqlite3
 import os
@@ -6,25 +6,29 @@ from dotenv import load_dotenv
 from functools import wraps
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import render_template
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
+import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import smtplib
-from flask import flash, session
 from email.header import decode_header
 from datetime import datetime
-from flask import request, redirect, url_for, session, make_response
-import json
 import pytz
+import json
 
+# Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
+
+# Загрузка переменных из .env
 load_dotenv()
 
+# Пути и секретные данные
 DB_PATH = os.getenv("DB_PATH", "tickets.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 
+# Инициализация Flask
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = SECRET_KEY  # Установка секретного ключа
 
 # Конфигурация Flask-Mail
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.mail.ru")
@@ -34,7 +38,14 @@ app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 
+# Настройки для загрузки файлов
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB лимит
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'txt', 'zip'}
+
+# Инициализация Flask-Mail
 mail = Mail(app)
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -68,6 +79,9 @@ def decode_sender(encoded_sender):
         else:
             decoded_str += part
     return decoded_str
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Функция отправки письма с подтверждением
 def send_confirmation_email(email, username="Пользователь"):
@@ -233,23 +247,30 @@ def create():
         subject = request.form.get("subject", "").strip()
         body = request.form.get("body", "").strip()
         user_id = session["user_id"]
-        sender = session["user"]  # Имя пользователя из сессии
+        sender = session["user"]
         status = "новая"
 
-        # Валидация полей
+        # Валидация
         if not subject or not body:
             flash("Все поля должны быть заполнены", "error")
             return redirect(url_for("create"))
 
-        # Получаем текущее время с учетом часового пояса Москвы
+        # Текущая дата/время в часовом поясе Москвы
         moscow_tz = pytz.timezone('Europe/Moscow')
         created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Подключение к базе данных и вставка данных с учетом времени
+        # Обработка файла
+        file = request.files.get("file")
+        filename = None
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        # Запись в базу данных
         conn = get_db_connection()
         conn.execute(
-            "INSERT INTO tickets (sender, subject, body, status, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (sender, subject, body, status, user_id, created_at)
+            "INSERT INTO tickets (sender, subject, body, status, user_id, created_at, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (sender, subject, body, status, user_id, created_at, filename)
         )
         conn.commit()
         conn.close()
@@ -449,6 +470,11 @@ def profile():
 
     return render_template("profile.html", user=user)
 
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    flash("Файл слишком большой. Максимальный размер — 16 МБ.", "danger")
+    return redirect(request.url)
+
 @app.route("/update_role", methods=["POST"])
 @login_required
 def update_role():
@@ -639,6 +665,10 @@ def confirm_email():
 
     flash("Email успешно подтвержден! Теперь вы можете войти.", "success")
     return redirect(url_for("login"))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -3,9 +3,9 @@
 {% block title %}Спасибо{% endblock %}
 
 {% block content %}
-<div class="text-center my-5">
-    <h2 class="mb-4">Спасибо за вашу заявку!</h2>
-    <p class="lead">Номер вашей заявки: <strong>{{ ticket_id }}</strong></p>
-    <a href="/" class="btn btn-primary mt-4">Вернуться на главную</a>
+<div class="container text-center mt-5">
+    <h2>Спасибо!</h2>
+    <p>Ваша заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.</p>
+    <a class="btn btn-primary mt-3" href="{{ url_for('create_public_ticket') }}">Создать ещё одну</a>
 </div>
 {% endblock %}
