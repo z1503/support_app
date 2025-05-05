@@ -1,44 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}Изменить профиль{% endblock %}
+{% block title %}Профиль пользователя{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-    <h2 class="mb-4 text-center">Изменить профиль</h2>
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4">Профиль</h2>
 
-    {% if error %}
-        <div class="alert alert-danger">
-            {{ error }}
+            {% if error %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="text-center mb-4">
+                    {% if user.avatar and user.avatar != 'default_avatar.png' %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}"
+                             alt="Аватар" class="rounded-circle shadow" style="width: 150px; height: 150px; object-fit: cover;">
+                        <!-- Кнопка для удаления аватара -->
+                        <button type="submit" name="delete_avatar" class="btn btn-outline-danger btn-sm mt-2">
+                            <i class="bi bi-trash"></i> Удалить фото
+                        </button>
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/default_avatar.png') }}"
+                             alt="Аватар по умолчанию" class="rounded-circle shadow" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 text-center">
+                    <label for="avatar" class="form-label">Загрузить новое фото</label>
+                    <input type="file" class="form-control" name="avatar" id="avatar" accept="image/*">
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" id="email" value="{{ user.email }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Новый пароль</label>
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Введите новый пароль">
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Подтвердите пароль</label>
+                    <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Подтвердите пароль">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Сохранить изменения</button>
+            </form>
+
+            <hr>
+            <div class="text-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Назад к заявкам</a>
+            </div>
         </div>
-    {% endif %}
-
-    <form method="POST">
-        <!-- Поле для нового email -->
-        <div class="mb-3">
-            <label for="email" class="form-label">Новый email</label>
-            <input type="email" class="form-control" name="email" id="email" value="{{ user['email'] }}" required>
-        </div>
-
-        <!-- Поле для нового пароля -->
-        <div class="mb-3">
-            <label for="password" class="form-label">Новый пароль</label>
-            <input type="password" class="form-control" name="password" id="password" placeholder="Введите новый пароль">
-        </div>
-
-        <!-- Поле для подтверждения нового пароля -->
-        <div class="mb-3">
-            <label for="confirm_password" class="form-label">Подтвердите новый пароль</label>
-            <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Подтвердите пароль">
-        </div>
-
-        <!-- Кнопка отправки формы -->
-        <button type="submit" class="btn btn-primary w-100">Обновить профиль</button>
-    </form>
-
-    <hr>
-
-    <div class="text-center">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Вернуться в панель управления</a>
     </div>
 </div>
 {% endblock %}

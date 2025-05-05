@@ -123,9 +123,10 @@ def login():
         conn.close()
 
         if user and check_password_hash(user["password"], password):
-            session['user_id'] = user['id']
+            session["user_id"] = user["id"]
             session["user"] = user["username"]
             session["role"] = user["role"]
+            session["user_avatar"] = user["avatar"] if user["avatar"] else "default_avatar.png"
             return redirect("/dashboard")
         else:
             return "Неверный логин или пароль", 401
@@ -422,61 +423,87 @@ def update_user_info(user_id):
         app.logger.error(f"Error updating user info: {e}")
         return "Ошибка при обновлении данных пользователя", 500
 
-@app.route("/profile", methods=["GET", "POST"])
+@app.route('/profile', methods=["GET", "POST"])
 def profile():
-    user_id = session.get('user_id')  # Получаем user_id из сессии
-
-    if not user_id:
-        return redirect("/login")  # Если user_id нет в сессии, перенаправляем на страницу входа
-
-    # Дальше ваш код для редактирования профиля
+    if "user_id" not in session:
+        return redirect(url_for('login'))
+    
     conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+    conn.close()
 
-    if not user:
-        return "Пользователь не найден", 404  # Если пользователь не найден, возвращаем ошибку
-
-    # Обработка POST-запроса для редактирования данных профиля
     if request.method == "POST":
-        new_email = request.form["email"]
-        new_password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
+        # Если нажали кнопку удалить фото
+        if 'delete_avatar' in request.form:
+            avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], user['avatar'])
+            
+            # Проверяем, что фото существует, и удаляем его
+            if user['avatar'] and os.path.exists(avatar_path):
+                os.remove(avatar_path)
 
-        # Проверяем, совпадают ли пароли
-        if new_password != confirm_password:
-            error_message = "Пароли не совпадают."
-            return render_template("profile.html", error=error_message, user=user)
-
-        try:
-            # Проверяем, существует ли email в базе данных, кроме текущего пользователя
-            user_with_email = conn.execute("SELECT * FROM users WHERE email = ? AND id != ?", (new_email, user_id)).fetchone()
-
-            if user_with_email:
-                error_message = "Пользователь с таким email уже существует."
-                return render_template("profile.html", error=error_message, user=user)
-
-            # Обновляем данные пользователя
-            if new_password:
-                hashed_password = generate_password_hash(new_password)
-                conn.execute("UPDATE users SET email = ?, password = ? WHERE id = ?", (new_email, hashed_password, user_id))
-            else:
-                conn.execute("UPDATE users SET email = ? WHERE id = ?", (new_email, user_id))
-
+            # Обновляем поле аватара в базе данных на default_avatar.png
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET avatar = ? WHERE id = ?", ('default_avatar.png', session['user_id']))
             conn.commit()
             conn.close()
 
-            # После успешного обновления можно перенаправить на другую страницу, например на панель управления
-            return redirect("/dashboard")
+            # Обновляем данные сессии
+            session['user_avatar'] = 'default_avatar.png'
 
-        except Exception as e:
-            app.logger.error(f"Error during profile update: {e}")
-            error_message = "Произошла ошибка при обновлении профиля."
-            return render_template("profile.html", error=error_message, user=user)
+            flash("Фото успешно удалено", "success")
+            return redirect(url_for('profile'))
 
-    # Если метод GET, просто отображаем текущие данные пользователя
-    conn.close()
+        # Обработка загрузки нового аватара
+        if 'avatar' in request.files:
+            avatar = request.files['avatar']
+            if avatar:
+                filename = secure_filename(avatar.filename)
+                avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                avatar.save(avatar_path)
+
+                # Обновляем информацию о пользователе в базе данных
+                conn = get_db_connection()
+                conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (filename, session['user_id']))
+                conn.commit()
+                conn.close()
+
+                # Обновляем данные сессии
+                session['user_avatar'] = filename
+
+                flash("Фото обновлено", "success")
+                return redirect(url_for('profile'))
+
+        # Обработка других данных (email и пароля)
+        email = request.form["email"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+
+        if password and password != confirm_password:
+            error = "Пароли не совпадают"
+            return render_template("profile.html", user=user, error=error)
+
+        if password:
+            hashed_password = generate_password_hash(password)
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET email = ?, password = ? WHERE id = ?",
+                         (email, hashed_password, session['user_id']))
+            conn.commit()
+            conn.close()
+
+        # Обновляем email в базе данных
+        conn = get_db_connection()
+        conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, session['user_id']))
+        conn.commit()
+        conn.close()
+
+        # Обновляем данные в сессии
+        session['user_email'] = email
+
+        flash("Данные обновлены", "success")
+        return redirect(url_for('profile'))
 
     return render_template("profile.html", user=user)
+
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large(e):
@@ -715,7 +742,7 @@ def upload_file():
     if 'file' not in request.files:
         logging.error("No file part")
         return 'No file part'
-    
+
     file = request.files['file']
     
     if file.filename == '':
@@ -724,16 +751,52 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        logging.info(f"File {filename} saved to {app.config['UPLOAD_FOLDER']}")
-        return redirect(url_for('uploaded_file', filename=filename))
-    
-    logging.error("File type not allowed")
-    return 'File not allowed'
 
+        # Проверка существования папки для сохранения файла
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
+        try:
+            # Сохраняем файл
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            logging.info(f"File {filename} saved to {app.config['UPLOAD_FOLDER']}")
+
+            # Обновляем путь к аватару в сессии
+            session['user_avatar'] = filename
+
+            return redirect(url_for('profile'))  # Перенаправление на страницу профиля
+        except Exception as e:
+            logging.error(f"Error saving file: {e}")
+            return 'Error saving file', 500
+    else:
+        logging.error("File type not allowed")
+        return 'File not allowed'
+    
 @app.route('/uploads/<filename>')
 def serve_uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/delete_avatar', methods=['POST'])
+def delete_avatar():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    user = conn.execute("SELECT avatar FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    if user and user['avatar'] and user['avatar'] != 'default_avatar.png':
+        avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], user['avatar'])
+        if os.path.exists(avatar_path):
+            os.remove(avatar_path)  # удаляем файл
+        # обновляем в БД
+        conn.execute("UPDATE users SET avatar = ? WHERE id = ?", ('default_avatar.png', user_id))
+        conn.commit()
+        session['user_avatar'] = 'default_avatar.png'
+    
+    conn.close()
+    flash('Аватар удалён', 'success')
+    return redirect(url_for('profile'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
