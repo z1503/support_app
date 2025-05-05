@@ -10,6 +10,7 @@
         <thead class="table-dark">
             <tr>
                 <th scope="col"><input type="checkbox" id="select-all" onclick="toggleAll(this)"></th>
+                <th scope="col" style="width: 60px;">Фото</th> <!-- Минимальная ширина для колонки с аватаром -->
                 <th scope="col">ID</th>
                 <th scope="col">Имя пользователя</th>
                 <th scope="col">Email</th>
@@ -21,6 +22,14 @@
         {% for user in users %}
             <tr>
                 <td><input type="checkbox" name="user_ids" value="{{ user.id }}"></td>
+                <!-- Аватар пользователя -->
+                <td>
+                    {% if user.avatar and user.avatar != 'default_avatar.png' %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}" alt="Аватар" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/default_avatar.png') }}" alt="Аватар по умолчанию" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                    {% endif %}
+                </td>
                 <td>{{ user.id }}</td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>

@@ -3,7 +3,8 @@
 {% block title %}Профиль пользователя{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 700px;">
+
+<div class="container mt-5" style="max-width: 750px;">
     <div class="card shadow-sm">
         <div class="card-body">
             <h2 class="card-title text-center mb-4">Профиль</h2>
@@ -15,32 +16,41 @@
             {% endif %}
 
             <form method="POST" enctype="multipart/form-data">
-                <div class="text-center mb-4">
+                <!-- Аватар -->
+                <div class="text-center mb-4 position-relative">
                     {% if user.avatar and user.avatar != 'default_avatar.png' %}
                         <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}"
-                             alt="Аватар" class="rounded-circle shadow" style="width: 150px; height: 150px; object-fit: cover;">
-                        <!-- Кнопка для удаления аватара -->
-                        <button type="submit" name="delete_avatar" class="btn btn-outline-danger btn-sm mt-2">
-                            <i class="bi bi-trash"></i> Удалить фото
+                             alt="Аватар" class="rounded-circle shadow mb-3"
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                        <!-- Кнопка удаления аватара с иконкой -->
+                        <button type="submit" name="delete_avatar" class="btn btn-outline-danger btn-sm position-absolute" 
+                                style="top: 10px; right: 10px;">
+                            <i class="bi bi-trash"></i>
                         </button>
                     {% else %}
                         <img src="{{ url_for('static', filename='uploads/default_avatar.png') }}"
-                             alt="Аватар по умолчанию" class="rounded-circle shadow" style="width: 150px; height: 150px; object-fit: cover;">
+                             alt="Аватар по умолчанию" class="rounded-circle shadow mb-3"
+                             style="width: 150px; height: 150px; object-fit: cover;">
                     {% endif %}
                 </div>
 
-                <div class="mb-3 text-center">
-                    <label for="avatar" class="form-label">Загрузить новое фото</label>
-                    <input type="file" class="form-control" name="avatar" id="avatar" accept="image/*">
+                <!-- Загрузка нового фото с кнопкой -->
+                <div class="mb-4 text-center">
+                    <label for="avatar" class="btn btn-outline-primary">
+                        <i class="bi bi-image"></i> Загрузить фото
+                    </label>
+                    <input type="file" class="form-control-file" name="avatar" id="avatar" accept="image/*" style="display: none;">
                 </div>
 
                 <hr>
 
+                <!-- Поле для email -->
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
                     <input type="email" class="form-control" name="email" id="email" value="{{ user.email }}" required>
                 </div>
 
+                <!-- Поле для пароля -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Новый пароль</label>
                     <input type="password" class="form-control" name="password" id="password" placeholder="Введите новый пароль">
@@ -55,10 +65,13 @@
             </form>
 
             <hr>
+
+            <!-- Кнопка возврата -->
             <div class="text-center">
                 <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Назад к заявкам</a>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
