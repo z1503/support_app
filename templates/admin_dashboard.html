@@ -3,10 +3,47 @@
 {% block title %}Админ-панель{% endblock %}
 
 {% block content %}
-    <h2 class="mb-3">Добро пожаловать, {{ session['user'] }} 
-    </h2>
+    <h2 class="mb-3">Добро пожаловать, {{ session['user'] }}</h2>
     <p class="lead">Здесь будет размещена статистика, управление пользователями и другие функции.</p>
 
-    <!-- Кнопка для перехода на страницу управления пользователями -->
+    <!-- Статистика по тикетам -->
+    <h3>Статистика по тикетам</h3>
+    <div class="chart-container" style="position: relative; width: 100%; height: 300px;">
+        <canvas id="ticketStatusChart"></canvas>
+    </div>
+
     <a class="btn btn-primary" href="{{ url_for('admin_users') }}">Управление пользователями</a>
+
+    <script>
+        var ctx = document.getElementById('ticketStatusChart').getContext('2d');
+        var ticketStatusChart = new Chart(ctx, {
+            type: 'pie',  // Тип графика (круговая диаграмма)
+            data: {
+                labels: {{ status_labels|tojson }},  // Метки
+                datasets: [{
+                    label: 'Тикеты по статусам',
+                    data: {{ status_counts|tojson }},  // Количество тикетов для каждого статуса
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],  // Цвета для секторов
+                    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                }]
+            },
+            options: {
+                plugins: {
+                    datalabels: {
+                        formatter: function(value, ctx) {
+                            return value;  // Показываем значение (количество заявок)
+                        },
+                        color: '#fff',  // Цвет текста на сегментах
+                        font: {
+                            weight: 'bold',
+                            size: 16
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            },
+            plugins: [ChartDataLabels]  // Включаем плагин для отображения данных
+        });
+    </script>
 {% endblock %}

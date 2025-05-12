@@ -99,3 +99,14 @@
     th:nth-child(6), td:nth-child(6) { width: 150px; }
     th:nth-child(7), td:nth-child(7) { width: 120px; }
 </style>
+
+<style>
+    .chart-container {
+        width: 80%; /* 80% ширины от контейнера */
+        margin: 0 auto; /* Центрируем график */
+        height: 300px; /* Ограничиваем высоту */
+    }
+    .btn {
+        margin-top: 20px; /* Добавляем отступ сверху для кнопки */
+    }
+</style>

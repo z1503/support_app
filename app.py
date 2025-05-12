@@ -331,11 +331,28 @@ def logout():
     session.clear()
     return redirect("/login")
 
-@app.route("/admin_dashboard")
-@login_required
-@role_required("admin")
+@app.route('/admin_dashboard')
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    # Подключаемся к базе данных и получаем статистику
+    conn = sqlite3.connect('support.db')
+    cursor = conn.cursor()
+    
+    # Получаем количество тикетов для каждого статуса
+    cursor.execute("SELECT status, COUNT(*) FROM tickets GROUP BY status")
+    statuses = cursor.fetchall()
+    
+    # Структурируем данные для графика
+    status_labels = []
+    status_counts = []
+    
+    for status, count in statuses:
+        status_labels.append(status)
+        status_counts.append(count)
+    
+    conn.close()
+    
+    # Передаем данные в шаблон
+    return render_template('admin_dashboard.html', status_labels=status_labels, status_counts=status_counts)
 
 @app.route("/admin/users", methods=["GET", "POST"])
 @login_required
