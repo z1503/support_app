@@ -110,6 +110,13 @@ def send_confirmation_email(email, username="Пользователь"):
 def index():
     return redirect("/login")
 
+@app.template_filter('decode_mime')
+def decode_mime_string(mime_string):
+    decoded_bytes, encoding = decode_header(mime_string)[0]
+    if isinstance(decoded_bytes, bytes):
+        return decoded_bytes.decode(encoding if encoding else 'utf-8')
+    return decoded_bytes
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -292,39 +299,48 @@ def create():
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
 @login_required
 def ticket(ticket_id):
-    conn = get_db_connection()
-    ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+    # Используем контекстный менеджер для работы с БД
+    with get_db_connection() as conn:
+        ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
 
-    # Если заявка не найдена
-    if ticket is None:
-        return redirect(url_for('dashboard'))
+        # Если заявка не найдена
+        if ticket is None:
+            flash("Заявка не найдена.", "error")
+            return redirect(url_for('dashboard'))
 
-    users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
+        users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
 
-    # Преобразуем ticket в обычный словарь, чтобы можно было модифицировать
-    ticket_dict = dict(ticket)
+        # Преобразуем ticket в обычный словарь, чтобы можно было модифицировать
+        ticket_dict = dict(ticket)
 
-    # Преобразуем строку в datetime объект для правильного отображения
-    ticket_dict["created_at"] = datetime.strptime(ticket_dict["created_at"], "%Y-%m-%d %H:%M:%S")
+        # Декодируем данные, если нужно (например, заголовки письма)
+        ticket_dict["sender"] = decode_sender(ticket_dict["sender"])
+        ticket_dict["subject"] = decode_sender(ticket_dict["subject"])
 
-    # Обработка изменения статуса и назначения ответственного
-    if request.method == "POST":
-        status = request.form.get("status")
-        assigned_to = request.form.get("assigned_to")
+        # Преобразуем строку в datetime объект для правильного отображения
+        ticket_dict["created_at"] = datetime.strptime(ticket_dict["created_at"], "%Y-%m-%d %H:%M:%S")
 
-        if status:
-            conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (status, ticket_id))
-        
-        if assigned_to:
-            conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (assigned_to, ticket_id))
+        # Если необходимо, форматируем дату в более удобочитаемый вид
+        ticket_dict["created_at_display"] = ticket_dict["created_at"].strftime("%d-%m-%Y %H:%M:%S")
 
-        conn.commit()
-        return redirect(url_for('ticket', ticket_id=ticket_id))
+        # Обработка изменения статуса и назначения ответственного
+        if request.method == "POST":
+            status = request.form.get("status")
+            assigned_to = request.form.get("assigned_to")
 
-    conn.close()
+            if status:
+                conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (status, ticket_id))
+            
+            if assigned_to:
+                conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (assigned_to, ticket_id))
+
+            conn.commit()
+            flash("Заявка обновлена.", "success")
+            return redirect(url_for('ticket', ticket_id=ticket_id))
 
     # Передаем в шаблон обновленный ticket_dict
     return render_template("ticket.html", ticket=ticket_dict, users=users)
+
 
 @app.route("/logout")
 def logout():

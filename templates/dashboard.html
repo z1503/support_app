@@ -144,7 +144,7 @@
                         <td><input type="checkbox" name="ticket_ids" value="{{ ticket.id }}"></td>
                     {% endif %}
                     <td>{{ ticket.id }}</td>
-                    <td>{{ ticket.sender }}</td> <!-- Добавлен столбец отправителя -->
+                    <td>{{ ticket.sender | decode_mime }}</td> <!-- Добавлен столбец отправителя -->
                     <td>{{ ticket.subject }}</td>
                     <td>{{ ticket.created_at }}</td>
                     <td>

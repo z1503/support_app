@@ -9,7 +9,7 @@
     <ul class="list-group mb-4">
         <li class="list-group-item"><strong>Отправитель:</strong> {{ ticket.sender }}</li>
         <li class="list-group-item"><strong>Тема:</strong> {{ ticket.subject }}</li>
-        <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body }}</li>
+        <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body | safe }}</li>
         <li class="list-group-item"><strong>Статус:</strong> {{ ticket.status }}</li>
         <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at.strftime("%d-%m-%Y %H:%M:%S") }}</li>
         <li class="list-group-item"><strong>Ответственный:</strong> 
@@ -32,7 +32,7 @@
         {% endif %}
     </ul>
 
-    {% if session["role"] in ["admin", "user"] %}
+    {% if session.get("role") in ["admin", "user"] %}
     <form method="POST" class="mb-3">
         <div class="mb-3">
             <label for="status" class="form-label">Изменить статус:</label>
