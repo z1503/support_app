@@ -17,6 +17,8 @@ import pytz
 import json
 from flask_login import login_required, current_user
 from flask import abort
+from flask import send_from_directory, Response
+import mimetypes
 
 
 # Настройка логирования
@@ -344,30 +346,27 @@ def ticket(ticket_id):
     # Передаем в шаблон обновленный ticket_dict
     return render_template("ticket.html", ticket=ticket_dict, users=users)
 
-
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
 @app.route('/admin_dashboard')
+@login_required
+@role_required('admin')
 def admin_dashboard():
-    if session.get('user_role') != 'admin':
-        abort(403)
-
-    conn = sqlite3.connect('support.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT status, COUNT(*) FROM tickets GROUP BY status")
     statuses = cursor.fetchall()
 
-    status_labels = [s[0] for s in statuses]
+    status_labels = [s["status"] for s in statuses]
     status_counts = [s[1] for s in statuses]
 
     conn.close()
 
     return render_template('admin_dashboard.html', status_labels=status_labels, status_counts=status_counts)
-
 
 @app.route("/admin/users", methods=["GET", "POST"])
 @login_required
@@ -535,7 +534,6 @@ def profile():
         return redirect(url_for('profile'))
 
     return render_template("profile.html", user=user)
-
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large(e):
@@ -747,9 +745,6 @@ def confirm_email():
 
     flash("Email успешно подтвержден! Теперь вы можете войти.", "success")
     return redirect(url_for("login"))
-
-from flask import send_from_directory, Response
-import mimetypes
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
