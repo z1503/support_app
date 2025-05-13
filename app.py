@@ -15,6 +15,9 @@ from email.header import decode_header
 from datetime import datetime
 import pytz
 import json
+from flask_login import login_required, current_user
+from flask import abort
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -349,26 +352,22 @@ def logout():
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
-    # Подключаемся к базе данных и получаем статистику
+    if session.get('user_role') != 'admin':
+        abort(403)
+
     conn = sqlite3.connect('support.db')
     cursor = conn.cursor()
-    
-    # Получаем количество тикетов для каждого статуса
+
     cursor.execute("SELECT status, COUNT(*) FROM tickets GROUP BY status")
     statuses = cursor.fetchall()
-    
-    # Структурируем данные для графика
-    status_labels = []
-    status_counts = []
-    
-    for status, count in statuses:
-        status_labels.append(status)
-        status_counts.append(count)
-    
+
+    status_labels = [s[0] for s in statuses]
+    status_counts = [s[1] for s in statuses]
+
     conn.close()
-    
-    # Передаем данные в шаблон
+
     return render_template('admin_dashboard.html', status_labels=status_labels, status_counts=status_counts)
+
 
 @app.route("/admin/users", methods=["GET", "POST"])
 @login_required
