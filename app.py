@@ -19,7 +19,8 @@ from flask_login import login_required, current_user
 from flask import abort
 from flask import send_from_directory, Response
 import mimetypes
-
+import uuid
+import magic
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -47,9 +48,33 @@ app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB лимит
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'txt', 'zip'}
+ALLOWED_MIME_TYPES = {'image/jpeg','image/png','application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document',}
 
 # Инициализация Flask-Mail
 mail = Mail(app)
+
+def get_mime_type(file):
+    file.seek(0)
+    mime = magic.Magic(mime=True)
+    mime_type = mime.from_buffer(file.read(2048))
+    file.seek(0)
+    return mime_type
+
+def save_file(file):
+    if file and allowed_file(file.filename):
+        # Проверка MIME-типа (браузерный заголовок)
+        if file.mimetype not in ALLOWED_MIME_TYPES:
+            return None  # MIME-тип не разрешён
+
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[-1]
+        unique_name = f"{uuid.uuid4().hex}.{ext}"
+        upload_path = app.config['UPLOAD_FOLDER']
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)
+        file.save(os.path.join(upload_path, unique_name))
+        return unique_name
+    return None
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -121,6 +146,14 @@ def decode_mime_string(mime_string):
     if isinstance(decoded_bytes, bytes):
         return decoded_bytes.decode(encoding if encoding else 'utf-8')
     return decoded_bytes
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template("403.html"), 403
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -270,19 +303,19 @@ def create():
         moscow_tz = pytz.timezone('Europe/Moscow')
         created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Работа с файлами
+        # --- Безопасная работа с файлами ---
         attachment = []
         files = request.files.getlist("files[]")  # Получаем список всех файлов
 
         for file in files:
-            if file.filename:  # Проверка, что файл выбран
-                if allowed_file(file.filename):  # Проверка допустимости формата
-                    filename = secure_filename(file.filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # Сохранение файла
-                    attachment.append(filename)  # Добавление имени файла в список
+            if file and file.filename:
+                filename = save_file(file)
+                if filename:
+                    attachment.append(filename)
                 else:
-                    flash("Неподдерживаемый формат файла. Разрешены: jpg, jpeg, png, pdf, docx, txt", "danger")
+                    flash("Неподдерживаемый формат файла или MIME-типа. Разрешены: jpg, jpeg, png, pdf, docx, txt", "danger")
                     return redirect(url_for("create"))
+        # --- Конец блока загрузки файлов ---
 
         # Преобразуем список файлов в строку, разделённую запятой
         attachment_str = ",".join(attachment) if attachment else None
@@ -300,6 +333,7 @@ def create():
         return redirect(url_for("dashboard"))
 
     return render_template("create.html")
+
 
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
 @login_required
@@ -468,8 +502,8 @@ def profile():
         if 'delete_avatar' in request.form:
             avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], user['avatar'])
             
-            # Проверяем, что фото существует, и удаляем его
-            if user['avatar'] and os.path.exists(avatar_path):
+            # Проверяем, что фото существует, и удаляем его (кроме дефолтного)
+            if user['avatar'] and user['avatar'] != 'default_avatar.png' and os.path.exists(avatar_path):
                 os.remove(avatar_path)
 
             # Обновляем поле аватара в базе данных на default_avatar.png
@@ -487,22 +521,28 @@ def profile():
         # Обработка загрузки нового аватара
         if 'avatar' in request.files:
             avatar = request.files['avatar']
-            if avatar:
-                filename = secure_filename(avatar.filename)
-                avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                avatar.save(avatar_path)
+            if avatar and avatar.filename:
+                filename = save_file(avatar)
+                if filename:
+                    # Удаляем старый аватар, если он не дефолтный
+                    old_avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], user['avatar'])
+                    if user['avatar'] and user['avatar'] != 'default_avatar.png' and os.path.exists(old_avatar_path):
+                        os.remove(old_avatar_path)
 
-                # Обновляем информацию о пользователе в базе данных
-                conn = get_db_connection()
-                conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (filename, session['user_id']))
-                conn.commit()
-                conn.close()
+                    # Обновляем информацию о пользователе в базе данных
+                    conn = get_db_connection()
+                    conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (filename, session['user_id']))
+                    conn.commit()
+                    conn.close()
 
-                # Обновляем данные сессии
-                session['user_avatar'] = filename
+                    # Обновляем данные сессии
+                    session['user_avatar'] = filename
 
-                flash("Фото обновлено", "success")
-                return redirect(url_for('profile'))
+                    flash("Фото обновлено", "success")
+                    return redirect(url_for('profile'))
+                else:
+                    flash("Неподдерживаемый формат файла или MIME-типа для аватара.", "danger")
+                    return redirect(url_for('profile'))
 
         # Обработка других данных (email и пароля)
         email = request.form["email"]
@@ -520,12 +560,12 @@ def profile():
                          (email, hashed_password, session['user_id']))
             conn.commit()
             conn.close()
-
-        # Обновляем email в базе данных
-        conn = get_db_connection()
-        conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, session['user_id']))
-        conn.commit()
-        conn.close()
+        else:
+            # Обновляем email в базе данных
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, session['user_id']))
+            conn.commit()
+            conn.close()
 
         # Обновляем данные в сессии
         session['user_email'] = email
@@ -678,19 +718,18 @@ def create_public_ticket():
             flash("Пожалуйста, заполните все поля.", "danger")
             return redirect(url_for("create_public_ticket"))
 
-        # Обработка нескольких вложений
+        # --- Безопасная обработка вложений ---
         attachments = []
         files = request.files.getlist("files")  # Получаем список файлов
         for file in files:
-            if file.filename != '':  # Если файл не пустой
-                if allowed_file(file.filename):  # Проверяем формат
-                    filename = secure_filename(file.filename)
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(filepath)
+            if file and file.filename:  # Если файл выбран
+                filename = save_file(file)
+                if filename:
                     attachments.append(filename)
                 else:
-                    flash("Неподдерживаемый формат файла. Допустимые форматы: jpg, jpeg, png, pdf, docx, txt", "danger")
+                    flash("Неподдерживаемый формат файла или MIME-типа. Допустимые форматы: jpg, jpeg, png, pdf, docx, txt", "danger")
                     return redirect(url_for("create_public_ticket"))
+        # --- Конец блока загрузки файлов ---
 
         # Если вложений несколько, то сохраняем их как строку, разделённую запятой
         attachment_str = ','.join(attachments) if attachments else None
@@ -713,6 +752,7 @@ def create_public_ticket():
         return redirect(url_for('thank_you', ticket_id=ticket_id))
 
     return render_template("create_public_ticket.html")
+
 
 @app.route("/thank_you/<int:ticket_id>")
 def thank_you(ticket_id):
@@ -747,22 +787,48 @@ def confirm_email():
     return redirect(url_for("login"))
 
 @app.route('/uploads/<filename>')
+@login_required  # если только для авторизованных пользователей
 def uploaded_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    # Защита от path traversal
+    if '/' in filename or '..' in filename:
+        abort(400)
 
-    # Проверяем MIME-тип файла
+    # Проверка прав доступа:
+    # 1. Если это аватар - только владелец или админ
+    # 2. Если это вложение тикета - только автор тикета, исполнитель или админ
+
+    user_id = session.get("user_id")
+    user_role = session.get("role")
+
+    # Проверка, что файл - аватар текущего пользователя
+    if filename == session.get("user_avatar"):
+        pass  # разрешаем
+
+    # Проверка, что пользователь - админ
+    elif user_role == "admin":
+        pass  # разрешаем
+
+    # Проверка, что файл - вложение к тикету пользователя (пример)
+    else:
+        conn = get_db_connection()
+        ticket = conn.execute(
+            "SELECT * FROM tickets WHERE (user_id = ? OR assignee_id = ?) AND (attachment LIKE ? OR attachment LIKE ? OR attachment LIKE ? OR attachment = ?)",
+            (user_id, user_id, f"{filename},%", f"%,{filename},%", f"%,{filename}", filename)
+        ).fetchone()
+        conn.close()
+        if not ticket:
+            abort(403)
+
+    # Проверяем, что файл действительно существует
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        abort(404)
+
+    # Определяем MIME-тип
     mime_type, _ = mimetypes.guess_type(file_path)
 
-    # Если MIME-тип для файла найден, то пытаемся его отдать как просмотр в браузере
-    if mime_type and mime_type.startswith('image'):
-        # Для изображений отправляем как обычный файл, чтобы браузер их отображал
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mime_type)
-    elif mime_type == 'application/pdf':
-        # Для PDF отправляем как просмотр в браузере
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mime_type)
-    else:
-        # Для других типов файлов по умолчанию мы отдаем их для скачивания
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    # Отдаём файл с корректным MIME-типом
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, mimetype=mime_type)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -776,32 +842,18 @@ def upload_file():
         logging.error("No selected file")
         return 'No selected file'
     
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-
-        # Проверка существования папки для сохранения файла
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-
-        try:
-            # Сохраняем файл
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            logging.info(f"File {filename} saved to {app.config['UPLOAD_FOLDER']}")
-
-            # Обновляем путь к аватару в сессии
-            session['user_avatar'] = filename
-
-            return redirect(url_for('profile'))  # Перенаправление на страницу профиля
-        except Exception as e:
-            logging.error(f"Error saving file: {e}")
-            return 'Error saving file', 500
+    filename = save_file(file)
+    if filename:
+        logging.info(f"File {filename} saved to {app.config['UPLOAD_FOLDER']}")
+        # Обновляем путь к аватару в сессии
+        session['user_avatar'] = filename
+        return redirect(url_for('profile'))  # Перенаправление на страницу профиля
     else:
-        logging.error("File type not allowed")
-        return 'File not allowed'
-    
-@app.route('/uploads/<filename>')
-def serve_uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        logging.error("File type or MIME-type not allowed")
+        # Лучше использовать flash-сообщение для пользователя:
+        flash("Неподдерживаемый формат файла или MIME-типа для аватара.", "danger")
+        return redirect(url_for('profile'))
+
 
 @app.route('/delete_avatar', methods=['POST'])
 def delete_avatar():
