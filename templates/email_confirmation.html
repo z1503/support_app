@@ -1,46 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <title>Подтверждение email</title>
   <style>
     body {
+      background: #f8fafc;
+      margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      padding: 20px;
     }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 30px;
+    .email-card {
+      max-width: 420px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      padding: 2.2rem 1.7rem 2rem 1.7rem;
+      text-align: center;
     }
-    h2 {
-      color: #333;
+    .email-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0d6efd;
+      margin-bottom: 1.3rem;
+      letter-spacing: 0.03em;
     }
-    a.button {
+    .email-message {
+      color: #444;
+      font-size: 1.08rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .email-btn {
       display: inline-block;
-      margin-top: 20px;
-      padding: 10px 15px;
-      background-color: #4CAF50;
-      color: white;
+      margin-top: 14px;
+      padding: 0.9em 2.2em;
+      background: #0d6efd;
+      color: #fff !important;
       text-decoration: none;
-      border-radius: 5px;
+      border-radius: 0.8em;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+      transition: background 0.18s;
     }
-    p {
-      color: #555;
+    .email-btn:hover {
+      background: #0b5ed7;
+    }
+    .email-footer {
+      color: #888;
+      font-size: 0.96rem;
+      margin-top: 2.3rem;
+      line-height: 1.5;
+    }
+    @media (max-width: 600px) {
+      .email-card { padding: 1.2rem 0.5rem; border-radius: 1rem; }
+      .email-title { font-size: 1.25rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Подтверждение регистрации</h2>
-    <p>Здравствуйте, {{ username }}!</p>
-    <p>Благодарим за регистрацию. Пожалуйста, подтвердите ваш адрес электронной почты, нажав на кнопку ниже:</p>
-    <a href="{{ confirm_url }}" class="button">Подтвердить email</a>
-    <p>Если вы не регистрировались, просто проигнорируйте это сообщение.</p>
-    <p>С уважением,<br>Команда поддержки</p>
+  <div class="email-card">
+    <div class="email-title">Подтверждение регистрации</div>
+    <div class="email-message">
+      Здравствуйте, <b>{{ username }}</b>!<br>
+      <br>
+      Спасибо за регистрацию.<br>
+      Пожалуйста, подтвердите ваш адрес электронной почты, нажав на кнопку ниже:
+    </div>
+    <a href="{{ confirm_url }}" class="email-btn">Подтвердить email</a>
+    <div class="email-footer">
+      Если вы не регистрировались, просто проигнорируйте это письмо.<br><br>
+      С уважением,<br>
+      Команда поддержки
+    </div>
   </div>
 </body>
 </html>

@@ -3,12 +3,55 @@
 {% block title %}Вход в систему{% endblock %}
 
 {% block content %}
+<style>
+    .auth-card {
+        max-width: 420px;
+        margin: 0 auto;
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        background: #fff;
+        padding: 2.2rem 1.7rem 2rem 1.7rem;
+    }
+    @media (max-width: 600px) {
+        .auth-card { padding: 1.2rem 0.5rem; border-radius: 1rem; }
+    }
+    .auth-title {
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #0d6efd;
+        letter-spacing: 0.01em;
+    }
+    .auth-btn {
+        font-size: 1.13rem;
+        padding: 0.85rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.3rem;
+        letter-spacing: 0.01em;
+    }
+    .auth-link {
+        color: #0d6efd;
+        text-decoration: none;
+        font-size: 1.02rem;
+    }
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+    .auth-divider {
+        border: none;
+        border-top: 1px solid #e0e0e0;
+        margin: 2rem 0 1rem 0;
+    }
+</style>
+
 <div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
-        <h3 class="text-center mb-4">Вход в систему</h3>
+    <div class="auth-card">
+        <div class="auth-title">Вход в систему</div>
 
         {% if error %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger text-center">
                 {{ error }}
             </div>
         {% endif %}
@@ -16,22 +59,20 @@
         <form method="POST">
             <div class="mb-3">
                 <label for="username_or_email" class="form-label">Имя пользователя или Email</label>
-                <input type="text" class="form-control" name="username_or_email" id="username_or_email" required>
+                <input type="text" class="form-control form-control-lg" name="username_or_email" id="username_or_email" required>
             </div>
-
             <div class="mb-3">
                 <label for="password" class="form-label">Пароль</label>
-                <input type="password" class="form-control" name="password" id="password" required>
+                <input type="password" class="form-control form-control-lg" name="password" id="password" required>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100">Войти</button>
+            <button type="submit" class="btn btn-primary w-100 auth-btn">Войти</button>
         </form>
-        
-        <div class="text-center mt-4">
-                <a href="{{ url_for('create_public_ticket') }}" class="link-primary text-decoration-none">Оставить заявку без регистрации</a>
-            </small>
+
+        <hr class="auth-divider">
+
+        <div class="text-center mb-2">
+            <a href="{{ url_for('create_public_ticket') }}" class="auth-link">Оставить заявку без регистрации</a>
         </div>
-        
         <div class="text-center">
             <a href="/register" class="btn btn-link">Нет аккаунта? Зарегистрироваться</a>
         </div>

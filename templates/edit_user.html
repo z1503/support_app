@@ -3,32 +3,87 @@
 {% block title %}Редактирование пользователя{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Редактирование пользователя</h2>
+<style>
+    .ticket-main-card {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    @media (max-width: 767px) {
+        .ticket-main-card {
+            padding: 1.2rem 0.5rem;
+            border-radius: 1rem;
+        }
+    }
+    .ticket-form-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+    .ticket-btn-main {
+        font-size: 1.15rem;
+        padding: 0.8rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .ticket-btn-secondary {
+        font-size: 1.05rem;
+        padding: 0.7rem 0;
+        border-radius: 0.7rem;
+        font-weight: 500;
+        margin-top: 0.7rem;
+    }
+</style>
 
-<form method="POST">
-    <div class="mb-3">
-        <label for="username" class="form-label">Имя пользователя</label>
-        <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+<div class="container-fluid py-4" style="min-height: 80vh;">
+    <div class="ticket-main-card">
+        <div class="mb-4 text-center">
+            <h2 class="mb-2">Редактирование пользователя</h2>
+        </div>
+        <div class="ticket-form-block">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control form-control-lg" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control form-control-lg" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="role" class="form-label">Роль</label>
+                        <select class="form-select form-select-lg" name="role" required>
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
+                            <option value="client" {% if user.role == 'client' %}selected{% endif %}>client</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="password" class="form-label">Новый пароль (не обязательно)</label>
+                        <input type="password" class="form-control form-control-lg" name="password">
+                    </div>
+                </div>
+                <div class="text-end mt-4">
+                    <button type="submit" class="btn btn-primary ticket-btn-main px-5">
+                        <i class="bi bi-save me-2"></i>Обновить
+                    </button>
+                </div>
+            </form>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary ticket-btn-secondary w-100 mt-3">
+                <i class="bi bi-arrow-left"></i> Назад к пользователям
+            </a>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
-    </div>
-    <div class="mb-3">
-        <label for="role" class="form-label">Роль</label>
-        <select class="form-select" name="role" required>
-            <option value="user" {% if user.role == 'user' %}selected{% endif %}>user</option>
-            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>admin</option>
-            <option value="client" {% if user.role == 'client' %}selected{% endif %}>client</option>
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Новый пароль (не обязательно)</label>
-        <input type="password" class="form-control" name="password">
-    </div>
-
-    <button type="submit" class="btn btn-primary">Обновить</button>
-</form>
-
-<a href="{{ url_for('admin_users') }}" class="btn btn-secondary mt-3">Назад к пользователям</a>
+</div>
 {% endblock %}

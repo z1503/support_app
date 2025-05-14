@@ -3,14 +3,57 @@
 {% block title %}Регистрация{% endblock %}
 
 {% block content %}
+<style>
+    .auth-card {
+        max-width: 420px;
+        margin: 0 auto;
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        background: #fff;
+        padding: 2.2rem 1.7rem 2rem 1.7rem;
+    }
+    @media (max-width: 600px) {
+        .auth-card { padding: 1.2rem 0.5rem; border-radius: 1rem; }
+    }
+    .auth-title {
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #0d6efd;
+        letter-spacing: 0.01em;
+    }
+    .auth-btn {
+        font-size: 1.13rem;
+        padding: 0.85rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.3rem;
+        letter-spacing: 0.01em;
+    }
+    .auth-link {
+        color: #0d6efd;
+        text-decoration: none;
+        font-size: 1.02rem;
+    }
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+    .auth-divider {
+        border: none;
+        border-top: 1px solid #e0e0e0;
+        margin: 2rem 0 1rem 0;
+    }
+</style>
+
 <div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="card shadow-sm p-4" style="width: 100%; max-width: 500px;">
-        <h3 class="text-center mb-4">Регистрация</h3>
+    <div class="auth-card">
+        <div class="auth-title">Регистрация</div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show text-center" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
                     </div>
@@ -19,20 +62,20 @@
         {% endwith %}
 
         {% if error %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger text-center">
                 {{ error }}
             </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="username" class="form-label">Имя пользователя</label>
-                <input type="text" class="form-control" name="username" id="username" required>
+                <input type="text" class="form-control form-control-lg" name="username" id="username" required>
             </div>
 
             <div class="mb-3">
                 <label for="email" class="form-label">Электронная почта</label>
-                <input type="email" class="form-control" name="email" id="email" required
+                <input type="email" class="form-control form-control-lg" name="email" id="email" required
                        pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
                        title="Введите корректный email, например: name@example.com"
                        placeholder="example@domain.com">
@@ -40,16 +83,15 @@
 
             <div class="mb-3">
                 <label for="password" class="form-label">Пароль</label>
-                <input type="password" class="form-control" name="password" id="password" required>
+                <input type="password" class="form-control form-control-lg" name="password" id="password" required>
             </div>
 
             <div class="mb-3">
                 <label for="avatar" class="form-label">Загрузить фото</label>
                 <input type="file" class="form-control" id="avatar" name="avatar">
             </div>
-            <button type="submit" class="btn btn-primary">Сохранить</button>
 
-            <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+            <button type="submit" class="btn btn-primary w-100 auth-btn">Зарегистрироваться</button>
         </form>
 
         <div class="text-center mt-3">
@@ -57,7 +99,7 @@
         </div>
 
         <div class="mt-3 text-center">
-            <small>После регистрации вам на почту будет отправлено письмо с подтверждением. Пожалуйста, проверьте вашу почту.</small>
+            <small>После регистрации вам на почту будет отправлено письмо с подтверждением.<br>Пожалуйста, проверьте вашу почту.</small>
         </div>
     </div>
 </div>

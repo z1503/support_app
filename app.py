@@ -625,16 +625,21 @@ def edit_user(user_id):
                              (username, email, role, user_id))
 
             conn.commit()
+            # Получаем обновлённые данные пользователя
+            user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
             conn.close()
             flash("Данные пользователя успешно обновлены", "success")
-            return redirect(url_for('admin_users'))
+            # Остаёмся на этой же странице
+            return render_template('edit_user.html', user=user)
 
+        conn.close()
         return render_template('edit_user.html', user=user)
-    
+
     except Exception as e:
         app.logger.error(f"Error during user update: {e}")
         flash("Ошибка при обновлении данных пользователя", "error")
         return redirect(url_for('admin_users'))
+
 
 @app.route("/admin/users/create_user", methods=["POST"])
 def create_user():
@@ -876,6 +881,15 @@ def delete_avatar():
     conn.close()
     flash('Аватар удалён', 'success')
     return redirect(url_for('profile'))
+
+@app.route('/test-email')
+def test_email_confirmation():
+    return render_template(
+        'email_confirmation.html',
+        username="Тестовый пользователь",
+        confirm_url="https://example.com/confirm/abc123"
+    )
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

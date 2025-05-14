@@ -3,83 +3,196 @@
 {% block title %}Управление пользователями{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Управление пользователями</h2>
+<style>
+    .admin-main-card {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    @media (max-width: 767px) {
+        .admin-main-card {
+            padding: 1.2rem 0.5rem;
+            border-radius: 1rem;
+        }
+    }
+    .user-table-avatar {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 1px solid #e0e0e0;
+        background: #f8f9fa;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .user-role-badge.user { background: #e7f1ff; color: #0d6efd; }
+    .user-role-badge.admin { background: #ffe7e7; color: #d90429; }
+    .user-role-badge.client { background: #f1f1f1; color: #555; }
+    .user-role-badge {
+        border-radius: 1em;
+        padding: 0.4em 1em;
+        font-size: 1em;
+        font-weight: 500;
+        display: inline-block;
+        min-width: 70px;
+        text-align: center;
+    }
+    .user-action-btn {
+        border: none;
+        background: none;
+        color: #0d6efd;
+        font-size: 1.35em;
+        margin: 0 0.2em;
+        transition: color 0.2s;
+        padding: 0.2em 0.5em;
+        border-radius: 0.4em;
+    }
+    .user-action-btn:hover { color: #084298; background: #f1f3fa; }
+    .table-users tr { transition: background 0.2s; }
+    .table-users tr.selected, .table-users tr.selected:hover { background: #e9f5ff !important; }
+    .table-users tr:hover { background: #f5faff; }
+    .table-users th, .table-users td {
+        vertical-align: middle;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .table-users th {
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 1.08em;
+        border-top: none;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    .table-users td {
+        font-size: 1.05em;
+    }
+    .table-responsive { border-radius: 1.1em; overflow: auto; }
+    .admin-add-user-form .form-control,
+    .admin-add-user-form .form-select {
+        min-width: 120px;
+    }
+    /* Крупные чекбоксы */
+    .form-check-input {
+        width: 1.3em;
+        height: 1.3em;
+        margin-top: 0;
+    }
+</style>
 
-<form method="POST" action="{{ url_for('delete_selected_users') }}">
-    <table class="table table-striped table-hover align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th scope="col"><input type="checkbox" id="select-all" onclick="toggleAll(this)"></th>
-                <th scope="col" style="width: 60px;">Фото</th> <!-- Минимальная ширина для колонки с аватаром -->
-                <th scope="col">ID</th>
-                <th scope="col">Имя пользователя</th>
-                <th scope="col">Email</th>
-                <th scope="col">Роль</th>
-                <th scope="col">Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td><input type="checkbox" name="user_ids" value="{{ user.id }}"></td>
-                <!-- Аватар пользователя -->
-                <td>
-                    {% if user.avatar and user.avatar != 'default_avatar.png' %}
-                        <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}" alt="Аватар" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                    {% else %}
-                        <img src="{{ url_for('static', filename='uploads/default_avatar.png') }}" alt="Аватар по умолчанию" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                    {% endif %}
-                </td>
-                <td>{{ user.id }}</td>
-                <td>{{ user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.role }}</td>
-                <td>
-                    <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
-                        ✏️
-                    </a>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<div class="container-fluid py-4" style="min-height: 80vh;">
+    <div class="admin-main-card">
+        <h2 class="mb-3">Управление пользователями</h2>
 
-    <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Удалить выбранных пользователей?')">Удалить выбранных</button>
-</form>
+        <form method="POST" id="delete-users-form" action="{{ url_for('delete_selected_users') }}">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle table-users mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:38px;">
+                                <input type="checkbox" id="select-all" class="form-check-input" onclick="toggleAll(this)">
+                            </th>
+                            <th style="width:60px;">Фото</th>
+                            <th style="width:60px;">ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Email</th>
+                            <th style="width:110px;">Роль</th>
+                            <th class="text-end" style="width:70px;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="user_ids" value="{{ user.id }}" class="form-check-input" onchange="highlightRow(this)">
+                            </td>
+                            <td>
+                                <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
+                                     alt="Аватар" class="user-table-avatar">
+                            </td>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="user-role-badge {{ user.role }}">
+                                    {{ user.role }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn" title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3" style="max-width: 220px;">
+                <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Удалить выбранных пользователей?')">
+                    <i class="bi bi-trash"></i> Удалить выбранных
+                </button>
+            </div>
+        </form>
 
-<hr class="my-4">
-<h4>Добавить нового пользователя</h4>
-
-<form method="POST" action="{{ url_for('create_user') }}">
-    <div class="row">
-        <div class="col-md-3 mb-2">
-            <input type="text" name="username" class="form-control" placeholder="Имя пользователя" required>
-        </div>
-        <div class="col-md-3 mb-2">
-            <input type="email" name="email" class="form-control" placeholder="Email" required>
-        </div>
-        <div class="col-md-2 mb-2">
-            <select name="role" class="form-select" required>
-                <option value="user">user</option>
-                <option value="admin">admin</option>
-                <option value="client">client</option>
-            </select>
-        </div>
-        <div class="col-md-2 mb-2">
-            <input type="password" name="password" class="form-control" placeholder="Пароль" required>
-        </div>
-        <div class="col-md-2 mb-2">
-            <button type="submit" class="btn btn-primary w-100">Добавить</button>
-        </div>
+        <hr class="my-4">
+        <h4>Добавить нового пользователя</h4>
+        <form method="POST" action="{{ url_for('create_user') }}" class="admin-add-user-form">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="username" class="form-control" placeholder="Имя пользователя" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="email" name="email" class="form-control" placeholder="Email" required>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <select name="role" class="form-select" required>
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                        <option value="client">client</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <input type="password" name="password" class="form-control" placeholder="Пароль" required>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-person-plus"></i> Добавить
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
-</form>
+</div>
 
 <script>
     function toggleAll(source) {
-        checkboxes = document.getElementsByName('user_ids');
-        for (var i = 0; i < checkboxes.length; i++) {
+        const checkboxes = document.getElementsByName('user_ids');
+        for (let i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = source.checked;
+            highlightRow(checkboxes[i]);
         }
     }
+    function highlightRow(checkbox) {
+        const row = checkbox.closest('tr');
+        if (checkbox.checked) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+    }
+    // При загрузке выделяем уже отмеченные строки (если есть)
+    window.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input[name="user_ids"]').forEach(function(cb) {
+            highlightRow(cb);
+        });
+    });
 </script>
 {% endblock %}

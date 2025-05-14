@@ -3,47 +3,112 @@
 {% block title %}Админ-панель{% endblock %}
 
 {% block content %}
-    <h2 class="mb-3">Добро пожаловать, {{ session['user'] }}</h2>
-    <p class="lead">Здесь будет размещена статистика, управление пользователями и другие функции.</p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
-    <!-- Статистика по тикетам -->
-    <h3>Статистика по тикетам</h3>
-    <div class="chart-container" style="position: relative; width: 100%; height: 300px;">
-        <canvas id="ticketStatusChart"></canvas>
+<style>
+    .admin-main-card {
+        max-width: 1100px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    @media (max-width: 767px) {
+        .admin-main-card {
+            padding: 1.2rem 0.5rem;
+            border-radius: 1rem;
+        }
+    }
+    .admin-panel-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.3em;
+    }
+    .admin-panel-lead {
+        font-size: 1.15rem;
+        color: #555;
+        margin-bottom: 2.2rem;
+    }
+    .admin-stats-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 2rem 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        margin-bottom: 2rem;
+    }
+    .admin-stats-block h3 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+    }
+    .admin-users-btn {
+        font-size: 1.15rem;
+        padding: 0.9rem 2.2rem;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        margin-top: 1.5rem;
+    }
+</style>
+
+<div class="container-fluid py-4" style="min-height: 80vh;">
+    <div class="admin-main-card">
+        <div>
+            <div class="admin-panel-title mb-2">Добро пожаловать, {{ session['user'] }}</div>
+        </div>
+
+        <!-- Статистика по тикетам -->
+        <div class="admin-stats-block">
+            <h3>Статистика по тикетам</h3>
+            <div class="chart-container" style="position: relative; width: 100%; height: 320px;">
+                <canvas id="ticketStatusChart"></canvas>
+            </div>
+        </div>
+
+        <div>
+            <a class="btn btn-primary admin-users-btn" href="{{ url_for('admin_users') }}">
+                <i class="bi bi-people"></i> Управление пользователями
+            </a>
+        </div>
     </div>
+</div>
 
-    <a class="btn btn-primary" href="{{ url_for('admin_users') }}">Управление пользователями</a>
-
-    <script>
-        var ctx = document.getElementById('ticketStatusChart').getContext('2d');
-        var ticketStatusChart = new Chart(ctx, {
-            type: 'pie',  // Тип графика (круговая диаграмма)
-            data: {
-                labels: {{ status_labels|tojson }},  // Метки
-                datasets: [{
-                    label: 'Тикеты по статусам',
-                    data: {{ status_counts|tojson }},  // Количество тикетов для каждого статуса
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],  // Цвета для секторов
-                    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-                }]
-            },
-            options: {
-                plugins: {
-                    datalabels: {
-                        formatter: function(value, ctx) {
-                            return value;  // Показываем значение (количество заявок)
-                        },
-                        color: '#fff',  // Цвет текста на сегментах
-                        font: {
-                            weight: 'bold',
-                            size: 16
-                        }
+<script>
+    var ctx = document.getElementById('ticketStatusChart').getContext('2d');
+    var ticketStatusChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: {{ status_labels|tojson }},
+            datasets: [{
+                label: 'Тикеты по статусам',
+                data: {{ status_counts|tojson }},
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+            }]
+        },
+        options: {
+            plugins: {
+                datalabels: {
+                    formatter: function(value, ctx) {
+                        return value;
+                    },
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 16
                     }
-                },
-                responsive: true,
-                maintainAspectRatio: false
+                }
             },
-            plugins: [ChartDataLabels]  // Включаем плагин для отображения данных
-        });
-    </script>
+            responsive: true,
+            maintainAspectRatio: false
+        },
+        plugins: [ChartDataLabels]
+    });
+</script>
 {% endblock %}

@@ -3,62 +3,231 @@
 {% block title %}Заявка #{{ ticket.id }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Заявка #{{ ticket.id }}</h2>
+<style>
+    .ticket-main-card {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
 
-    <ul class="list-group mb-4">
-        <li class="list-group-item"><strong>Отправитель:</strong> {{ ticket.sender }}</li>
-        <li class="list-group-item"><strong>Тема:</strong> {{ ticket.subject }}</li>
-        <li class="list-group-item"><strong>Описание:</strong><br>{{ ticket.body | safe }}</li>
-        <li class="list-group-item"><strong>Статус:</strong> {{ ticket.status }}</li>
-        <li class="list-group-item"><strong>Дата создания:</strong> {{ ticket.created_at.strftime("%d-%m-%Y %H:%M:%S") }}</li>
-        <li class="list-group-item"><strong>Ответственный:</strong> 
-            {% if ticket.assigned_username %}
-                {{ ticket.assigned_username }}
-            {% else %}
-                Не назначен
-            {% endif %}
-        </li>
+    @media (max-width: 767px) {
+        .ticket-main-card {
+            padding: 1.2rem 0.5rem;
+            border-radius: 1rem;
+        }
+    }
 
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .ticket-title-row h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .ticket-status-badge {
+        font-size: 1.15rem;
+        padding: 0.6em 1.4em;
+        border-radius: 2em;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+    }
+
+    .ticket-details-row {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .ticket-details-col {
+        flex: 1 1 260px;
+        min-width: 220px;
+    }
+
+    .ticket-details-label {
+        color: #888;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+
+    .ticket-details-value {
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: #222;
+        margin-bottom: 1.2rem;
+    }
+
+    .ticket-description-block {
+        background: #f8f9fa;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        min-height: 80px;
+    }
+
+    .ticket-attachments-block {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .ticket-attachment-card {
+        display: flex;
+        align-items: center;
+        gap: 0.7em;
+        background: #f3f6fa;
+        border-radius: 0.8em;
+        padding: 0.7em 1.2em;
+        font-size: 1.05rem;
+        color: #0d6efd;
+        text-decoration: none;
+        transition: background 0.15s;
+        border: 1px solid #e0e7ef;
+    }
+
+    .ticket-attachment-card:hover {
+        background: #e9f1ff;
+        color: #084298;
+        text-decoration: underline;
+    }
+
+    .ticket-form-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .ticket-btn-main {
+        font-size: 1.25rem;
+        padding: 0.9rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .ticket-btn-secondary {
+        font-size: 1.1rem;
+        padding: 0.7rem 0;
+        border-radius: 0.7rem;
+        font-weight: 500;
+        margin-top: 0.7rem;
+    }
+</style>
+
+<div class="container-fluid py-4" style="min-height: 80vh;">
+    <div class="ticket-main-card">
+        <!-- Заголовок и статус -->
+        <div class="ticket-title-row">
+            <h2>Заявка #{{ ticket.id }}</h2>
+            <span class="ticket-status-badge
+                {% if ticket.status == 'новая' %}bg-success
+                {% elif ticket.status == 'в работе' %}bg-warning text-dark
+                {% elif ticket.status == 'завершена' %}bg-secondary
+                {% else %}bg-light text-dark
+                {% endif %}">
+                {{ ticket.status|capitalize }}
+            </span>
+        </div>
+
+        <!-- Детали заявки -->
+        <div class="ticket-details-row">
+            <div class="ticket-details-col">
+                <div class="ticket-details-label">Отправитель</div>
+                <div class="ticket-details-value">{{ ticket.sender }}</div>
+                <div class="ticket-details-label">Тема</div>
+                <div class="ticket-details-value">{{ ticket.subject }}</div>
+            </div>
+            <div class="ticket-details-col">
+                <div class="ticket-details-label">Дата создания</div>
+                <div class="ticket-details-value">{{ ticket.created_at.strftime("%d-%m-%Y %H:%M:%S") }}</div>
+                <div class="ticket-details-label">Ответственный</div>
+                <div class="ticket-details-value">
+                    {% if ticket.assigned_username %}
+                    {{ ticket.assigned_username }}
+                    {% else %}
+                    <span class="text-muted">Не назначен</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Описание -->
+        <div>
+            <div class="ticket-details-label mb-1">Описание</div>
+            <div class="ticket-description-block">{{ ticket.body | safe }}</div>
+        </div>
+
+        <!-- Вложения -->
         {% if ticket.attachment %}
-        <li class="list-group-item">
-            <strong>Вложения:</strong>
-            {% for file in ticket.attachment.split(',') %}
-                <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
-                    {{ file }}
-                </a><br>
-            {% endfor %}
-        </li>
-        {% endif %}
-    </ul>
-
-    {% if session.get("role") in ["admin", "user"] %}
-    <form method="POST" class="mb-3">
-        <div class="mb-3">
-            <label for="status" class="form-label">Изменить статус:</label>
-            <select name="status" class="form-select" required>
-                <option value="новая" {% if ticket.status == 'новая' %}selected{% endif %}>Новая</option>
-                <option value="в работе" {% if ticket.status == 'в работе' %}selected{% endif %}>В работе</option>
-                <option value="завершена" {% if ticket.status == 'завершена' %}selected{% endif %}>Завершена</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="assigned_to" class="form-label">Ответственный пользователь:</label>
-            <select name="assigned_to" class="form-select">
-                <option value="">Не назначать</option>
-                {% for user in users %}
-                    <option value="{{ user.id }}" {% if ticket.assigned_to == user.id %}selected{% endif %}>
-                        {{ user.username }}
-                    </option>
+        <div>
+            <div class="ticket-details-label mb-1">Вложения</div>
+            <div class="ticket-attachments-block">
+                {% for file in ticket.attachment.split(',') %}
+                <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank" class="ticket-attachment-card">
+                    <i class="bi bi-paperclip"></i> {{ file }}
+                </a>
                 {% endfor %}
-            </select>
+            </div>
         </div>
+        {% endif %}
 
-        <button type="submit" class="btn btn-primary">Обновить</button>
-    </form>
-    {% endif %}
-
-    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Назад к списку заявок</a>
+        <!-- Форма управления -->
+        {% if session.get("role") in ["admin", "user"] %}
+        <div class="ticket-form-block">
+            <form method="POST">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label for="status" class="form-label mb-1">Статус</label>
+                        <select name="status" class="form-select form-select-sm" required>
+                            <option value="новая" {% if ticket.status=='новая' %}selected{% endif %}>Новая</option>
+                            <option value="в работе" {% if ticket.status=='в работе' %}selected{% endif %}>В работе
+                            </option>
+                            <option value="завершена" {% if ticket.status=='завершена' %}selected{% endif %}>Завершена
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="assigned_to" class="form-label mb-1">Ответственный</label>
+                        <select name="assigned_to" class="form-select form-select-sm">
+                            <option value="">Не назначать</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if ticket.assigned_to==user.id %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-1"></i>Обновить
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        <!-- Кнопка назад -->
+        <a class="btn btn-outline-secondary ticket-btn-secondary w-100" href="{{ url_for('dashboard') }}">
+            <i class="bi bi-arrow-left"></i> Назад к списку заявок
+        </a>
+    </div>
 </div>
 {% endblock %}

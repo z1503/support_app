@@ -1,11 +1,61 @@
-{% extends "base.html" %}
+{% extends "base_auth.html" %}
 
 {% block title %}Создать заявку{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <h2 class="mb-4">Создать заявку</h2>
+<style>
+    .auth-card {
+        max-width: 420px;
+        margin: 0 auto;
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        background: #fff;
+        padding: 2.2rem 1.7rem 2rem 1.7rem;
+    }
+    @media (max-width: 600px) {
+        .auth-card { padding: 1.2rem 0.5rem; border-radius: 1rem; }
+    }
+    .auth-title {
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #0d6efd;
+        letter-spacing: 0.01em;
+    }
+    .auth-btn {
+        font-size: 1.13rem;
+        padding: 0.85rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.3rem;
+        letter-spacing: 0.01em;
+    }
+    .auth-link {
+        color: #0d6efd;
+        text-decoration: none;
+        font-size: 1.02rem;
+    }
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+    .auth-divider {
+        border: none;
+        border-top: 1px solid #e0e0e0;
+        margin: 2rem 0 1rem 0;
+    }
+    #preview-images img {
+        max-height: 120px;
+        max-width: 120px;
+        margin: 0.2em 0.2em 0 0;
+        border-radius: 0.7em;
+        border: 1px solid #e0e0e0;
+    }
+</style>
+
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="auth-card">
+        <div class="auth-title">Создать заявку</div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -18,20 +68,20 @@
             {% endif %}
         {% endwith %}
 
-        <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm">
+        <form method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="sender" class="form-label">Ваше имя или Email</label>
-                <input type="text" class="form-control" id="sender" name="sender" required>
+                <input type="text" class="form-control form-control-lg" id="sender" name="sender" required>
             </div>
 
             <div class="mb-3">
                 <label for="subject" class="form-label">Тема заявки</label>
-                <input type="text" class="form-control" id="subject" name="subject" required>
+                <input type="text" class="form-control form-control-lg" id="subject" name="subject" required>
             </div>
 
             <div class="mb-3">
                 <label for="body" class="form-label">Описание проблемы</label>
-                <textarea class="form-control" id="body" name="body" rows="5" required></textarea>
+                <textarea class="form-control form-control-lg" id="body" name="body" rows="5" required></textarea>
             </div>
 
             <div class="mb-3">
@@ -40,51 +90,44 @@
                 <small class="form-text text-muted">Поддерживаемые форматы: .jpg, .png, .pdf, .docx, .txt, .zip</small>
             </div>
 
-            <!-- Контейнер для предпросмотра изображений -->
             <div id="preview-container" class="mt-3" style="display: none;">
                 <label class="form-label">Предпросмотр:</label>
                 <div id="preview-images"></div>
             </div>
 
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary btn-lg px-5">Отправить заявку</button>
-            </div>
+            <button type="submit" class="btn btn-primary w-100 auth-btn">Отправить заявку</button>
         </form>
+
+        <hr class="auth-divider">
+
+        <div class="text-center">
+            <a href="{{ url_for('login') }}" class="btn btn-link"><i class="bi bi-arrow-left"></i> Назад ко входу</a>
+        </div>
     </div>
 </div>
 
 <script>
-    // Обработчик для предпросмотра изображений
     document.getElementById('file').addEventListener('change', function(event) {
         var files = event.target.files;
         var previewContainer = document.getElementById('preview-container');
         var previewImages = document.getElementById('preview-images');
-
-        // Очистить контейнер перед добавлением новых превью
         previewImages.innerHTML = '';
-
+        let hasImages = false;
         if (files.length > 0) {
-            previewContainer.style.display = 'block';  // Показываем контейнер для предпросмотра
-
             Array.from(files).forEach(function(file) {
-                var reader = new FileReader();
-
-                reader.onload = function(e) {
-                    var img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.classList.add('img-fluid', 'rounded', 'border');
-                    img.style.maxHeight = '300px';
-                    previewImages.appendChild(img);
-                };
-
-                // Проверяем, если файл — изображение
                 if (file.type.startsWith('image/')) {
-                    reader.readAsDataURL(file);  // Читаем изображение как Data URL
+                    hasImages = true;
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        previewImages.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
                 }
             });
-        } else {
-            previewContainer.style.display = 'none';  // Скрываем контейнер, если нет файлов
         }
+        previewContainer.style.display = hasImages ? 'block' : 'none';
     });
 </script>
 {% endblock %}
