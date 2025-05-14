@@ -19,8 +19,183 @@
 
     @media (max-width: 767px) {
         .ticket-main-card {
-            padding: 1.2rem 0.5rem;
+            padding: 0.6rem 0.2rem;
             border-radius: 1rem;
+            gap: 1.2rem;
+        }
+
+        .ticket-title-row h2 {
+            font-size: 1.15rem;
+        }
+
+        .ticket-form-block {
+            padding: 0.7rem 0.3rem;
+            border-radius: 0.7rem;
+            margin-top: 1rem;
+        }
+
+        .table-users,
+        .table-users thead,
+        .table-users tbody,
+        .table-users th,
+        .table-users tr {
+            display: none !important;
+        }
+
+        .mobile-users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+
+        .mobile-user-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.1rem 1rem 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            min-height: 110px;
+        }
+
+        .mobile-user-checkbox {
+            position: absolute;
+            left: 0.7rem;
+            top: 0.7rem;
+            z-index: 2;
+            transform: scale(1.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: #fff;
+            border-radius: 0.4em;
+            padding: 0.18em;
+        }
+
+        .mobile-user-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .mobile-user-avatar {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            background: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            margin-left: 2.2em;
+        }
+
+        .mobile-user-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.1em;
+        }
+
+        .mobile-user-id {
+            font-weight: 600;
+            font-size: 0.99em;
+            color: #0d6efd;
+            letter-spacing: 0.01em;
+        }
+
+        .mobile-user-username {
+            font-size: 1.08em;
+            font-weight: 500;
+            color: #222;
+            word-break: break-all;
+        }
+
+        .mobile-user-email {
+            font-size: 0.97em;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .mobile-user-role {
+            margin-top: 0.2em;
+        }
+
+        .user-role-badge.user {
+            background: #e7f1ff;
+            color: #0d6efd;
+        }
+
+        .user-role-badge.admin {
+            background: #ffe7e7;
+            color: #d90429;
+        }
+
+        .user-role-badge.client {
+            background: #f1f1f1;
+            color: #555;
+        }
+
+        .user-role-badge {
+            border-radius: 1em;
+            padding: 0.4em 1em;
+            font-size: 0.95em;
+            font-weight: 500;
+            display: inline-block;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .mobile-user-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6em;
+            margin-top: 0.4em;
+        }
+
+        .user-action-btn {
+            border: none;
+            background: none;
+            color: #0d6efd;
+            font-size: 1.3em;
+            margin: 0 0.1em;
+            transition: color 0.2s;
+            padding: 0.2em 0.5em;
+            border-radius: 0.4em;
+        }
+
+        .user-action-btn:hover {
+            color: #084298;
+            background: #f1f3fa;
+        }
+
+        .mobile-users-actions-bar {
+            margin: 1.1em 0 0.6em 0;
+            display: flex;
+            gap: 0.7em;
+        }
+
+        .mobile-users-actions-bar .btn {
+            flex: 1;
+            font-size: 1em;
+            border-radius: 0.6em;
+            padding: 0.55em 0;
+        }
+
+        .admin-add-user-form .form-control,
+        .admin-add-user-form .form-select {
+            font-size: 0.98em;
+            padding: 0.5em 0.7em;
+            border-radius: 0.6em;
+        }
+    }
+
+    @media (min-width: 768px) {
+
+        .mobile-users-list,
+        .mobile-users-actions-bar {
+            display: none !important;
         }
     }
 
@@ -146,14 +321,44 @@
     }
 </style>
 
-
 <div class="ticket-main-card">
     <div class="ticket-title-row">
         <h2>Управление пользователями</h2>
     </div>
 
     <div class="ticket-form-block">
+        <!-- Мобильные карточки пользователей -->
         <form method="POST" id="delete-users-form" action="{{ url_for('delete_selected_users') }}">
+            <div class="mobile-users-actions-bar">
+            </div>
+            <div class="mobile-users-list">
+                {% for user in users %}
+                <div class="mobile-user-card">
+                    <input type="checkbox" name="user_ids" value="{{ user.id }}"
+                        class="form-check-input mobile-user-checkbox" onchange="event.stopPropagation();">
+                    <div class="mobile-user-header">
+                        <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
+                            alt="Аватар" class="mobile-user-avatar">
+                        <div class="mobile-user-info">
+                            <span class="mobile-user-id">ID {{ user.id }}</span>
+                            <span class="mobile-user-username">{{ user.username }}</span>
+                            <span class="mobile-user-email">{{ user.email }}</span>
+                            <span class="mobile-user-role user-role-badge {{ user.role }}">{{ user.role }}</span>
+                        </div>
+                    </div>
+                    <div class="mobile-user-actions">
+                        <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn"
+                            title="Редактировать">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </form>
+
+        <!-- Десктопная таблица -->
+        <form method="POST" id="delete-users-form-desktop" action="{{ url_for('delete_selected_users') }}">
             <div class="table-responsive">
                 <table class="table table-hover align-middle table-users mb-0">
                     <thead>
@@ -238,7 +443,6 @@
     </div>
 </div>
 
-
 <script>
     function toggleAll(source) {
         const checkboxes = document.getElementsByName('user_ids');
@@ -249,10 +453,12 @@
     }
     function highlightRow(checkbox) {
         const row = checkbox.closest('tr');
-        if (checkbox.checked) {
-            row.classList.add('selected');
-        } else {
-            row.classList.remove('selected');
+        if (row) {
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
         }
     }
     window.addEventListener('DOMContentLoaded', function () {

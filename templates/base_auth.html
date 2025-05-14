@@ -26,29 +26,74 @@
         .auth-content {
             width: 100%;
             max-width: 370px;
+            background: #fff;
+            border-radius: 1.2rem;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+            padding: 2.2rem 1.5rem 1.5rem 1.5rem;
         }
         .auth-content h2 {
             font-weight: 700;
             letter-spacing: 0.02em;
             margin-bottom: 1.5rem;
             text-align: center;
+            font-size: 2rem;
         }
         .auth-content form .form-control {
             border-radius: 0.75rem;
+            font-size: 1.1rem;
+            padding: 0.7rem 1rem;
         }
         .auth-content .btn {
             border-radius: 0.75rem;
             font-weight: 600;
+            font-size: 1.1rem;
+            padding: 0.7rem 1rem;
         }
         .auth-content .alert {
             border-radius: 0.8rem;
+            font-size: 1rem;
         }
         footer {
             background: transparent;
             color: #888;
-            padding: 20px;
-            font-size: 14px;
+            padding: 16px 8px 8px 8px;
+            font-size: 13px;
             text-align: center;
+        }
+        @media (max-width: 575.98px) {
+            .auth-container {
+                padding: 0.5rem 0.1rem;
+            }
+            .auth-content {
+                max-width: 100%;
+                padding: 1.2rem 0.5rem 1rem 0.5rem;
+                border-radius: 0.7rem;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            }
+            .auth-content h2 {
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }
+            .auth-content form .form-control,
+            .auth-content .btn {
+                font-size: 1rem;
+                padding: 0.55rem 0.8rem;
+            }
+            .auth-content .alert {
+                font-size: 0.96rem;
+            }
+            footer {
+                font-size: 12px;
+                padding: 8px 4px 4px 4px;
+            }
+        }
+        @media (max-width: 375px) {
+            .auth-content {
+                padding: 0.5rem 0.2rem 0.5rem 0.2rem;
+            }
+            .auth-content h2 {
+                font-size: 1.1rem;
+            }
         }
     </style>
 </head>
