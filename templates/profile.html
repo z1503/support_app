@@ -8,7 +8,7 @@
         max-width: 1200px;
         margin: 0 auto;
         border-radius: 2rem;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
         background: #fff;
         padding: 2.5rem 2rem 2rem 2rem;
         min-height: 70vh;
@@ -21,6 +21,23 @@
             padding: 1.2rem 0.5rem;
             border-radius: 1rem;
         }
+    }
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .ticket-title-row h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+    .ticket-form-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     }
     .profile-avatar-block {
         position: relative;
@@ -73,10 +90,10 @@
 
 <div class="container-fluid py-4" style="min-height: 80vh;">
     <div class="ticket-main-card">
-        <div class="mb-4 text-center">
-            <h2 class="mb-2">Профиль</h2>
+        <div class="ticket-title-row">
+            <h2>Профиль</h2>
         </div>
-        <div>
+        <div class="ticket-form-block">
             {% if error %}
                 <div class="alert alert-danger">
                     {{ error }}
@@ -89,7 +106,6 @@
                     {% if user.avatar and user.avatar != 'default_avatar.png' %}
                         <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}"
                              alt="Аватар" class="mb-3">
-                        <!-- Кнопка удаления аватара -->
                         <button type="submit" name="delete_avatar" class="btn btn-outline-danger btn-sm delete-avatar-btn" title="Удалить фото">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -100,7 +116,6 @@
                     <div class="profile-username">{{ user.username }}</div>
                 </div>
 
-                <!-- Загрузка нового фото -->
                 <div class="mb-4 text-center">
                     <label for="avatar" class="btn btn-outline-primary profile-upload-label">
                         <i class="bi bi-image"></i> Загрузить фото

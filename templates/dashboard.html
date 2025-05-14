@@ -4,11 +4,11 @@
 
 {% block content %}
 <style>
-    .dashboard-main-card {
+    .ticket-main-card {
         max-width: 1200px;
         margin: 0 auto;
         border-radius: 2rem;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
         background: #fff;
         padding: 2.5rem 2rem 2rem 2rem;
         min-height: 70vh;
@@ -16,15 +16,49 @@
         flex-direction: column;
         gap: 2.5rem;
     }
+
     @media (max-width: 767px) {
-        .dashboard-main-card {
+        .ticket-main-card {
             padding: 1.2rem 0.5rem;
             border-radius: 1rem;
         }
     }
-    .ticket-status-badge.novaya { background: #e7fbe7; color: #198754; }
-    .ticket-status-badge.vrabote { background: #fffbe7; color: #b8860b; }
-    .ticket-status-badge.zavershena { background: #f1f1f1; color: #555; }
+
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .ticket-title-row h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .ticket-form-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .ticket-status-badge.novaya {
+        background: #e7fbe7;
+        color: #198754;
+    }
+
+    .ticket-status-badge.vrabote {
+        background: #fffbe7;
+        color: #b8860b;
+    }
+
+    .ticket-status-badge.zavershena {
+        background: #f1f1f1;
+        color: #555;
+    }
+
     .ticket-status-badge {
         border-radius: 1em;
         padding: 0.4em 1em;
@@ -34,16 +68,29 @@
         min-width: 80px;
         text-align: center;
     }
-    .table-tickets tr { transition: background 0.2s; }
-    .table-tickets tr.selected, .table-tickets tr.selected:hover { background: #e9f5ff !important; }
-    .table-tickets tr:hover { background: #f5faff; }
-    .table-tickets th, .table-tickets td {
+
+    .table-tickets tr {
+        transition: background 0.2s;
+    }
+
+    .table-tickets tr.selected,
+    .table-tickets tr.selected:hover {
+        background: #e9f5ff !important;
+    }
+
+    .table-tickets tr:hover {
+        background: #f5faff;
+    }
+
+    .table-tickets th,
+    .table-tickets td {
         vertical-align: middle;
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
         border-bottom: 1px solid #f1f1f1;
     }
+
     .table-tickets th {
         background: #f8f9fa;
         font-weight: 600;
@@ -51,39 +98,48 @@
         border-top: none;
         border-bottom: 2px solid #e0e0e0;
     }
+
     .table-tickets td {
         font-size: 1.05em;
     }
-    .table-responsive { border-radius: 1.1em; overflow: auto; }
-    /* Крупные чекбоксы */
+
+    .table-responsive {
+        border-radius: 1.1em;
+        overflow: auto;
+    }
+
     .form-check-input {
         width: 1.3em;
         height: 1.3em;
         margin-top: 0;
     }
+
     .sortable-column a {
         user-select: none;
     }
+
     .sort-arrow {
         font-size: 1.1em;
         margin-left: 0.3em;
     }
 </style>
 
-<div class="container-fluid py-4" style="min-height: 80vh;">
-    <div class="dashboard-main-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Панель заявок</h2>
-        </div>
 
+<div class="ticket-main-card">
+    <!-- Заголовок -->
+    <div class="ticket-title-row">
+        <h2>Панель заявок</h2>
+    </div>
+
+    <div class="ticket-form-block">
         <!-- Форма фильтрации -->
         <form method="get" class="row g-2 mb-3">
             <div class="col-auto">
                 <select name="status_filter" class="form-select">
                     <option value="">Все статусы</option>
-                    <option value="новая" {% if status_filter == 'новая' %}selected{% endif %}>Новая</option>
-                    <option value="в работе" {% if status_filter == 'в работе' %}selected{% endif %}>В работе</option>
-                    <option value="завершена" {% if status_filter == 'завершена' %}selected{% endif %}>Завершена</option>
+                    <option value="новая" {% if status_filter=='новая' %}selected{% endif %}>Новая</option>
+                    <option value="в работе" {% if status_filter=='в работе' %}selected{% endif %}>В работе</option>
+                    <option value="завершена" {% if status_filter=='завершена' %}selected{% endif %}>Завершена</option>
                 </select>
             </div>
             <div class="col-auto">
@@ -98,50 +154,51 @@
                     <thead>
                         <tr>
                             {% if session["role"] != "client" %}
-                                <th style="width:38px;">
-                                    <input type="checkbox" id="select-all" class="form-check-input" onclick="toggleAll(this)">
-                                </th>
+                            <th style="width:38px;">
+                                <input type="checkbox" id="select-all" class="form-check-input"
+                                    onclick="toggleAll(this)">
+                            </th>
                             {% endif %}
                             <th class="sortable-column" style="width: 100px;">
                                 <a href="{{ url_for('dashboard', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                   class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
+                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
                                     <span>Номер</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'id' %}
-                                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
                                         {% else %}&nbsp;{% endif %}
                                     </span>
                                 </a>
                             </th>
                             <th class="sortable-column" style="width: 150px;">
                                 <a href="{{ url_for('dashboard', sort_by='sender', sort_order='asc' if sort_by != 'sender' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                   class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
+                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
                                     <span>Отправитель</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'sender' %}
-                                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
                                         {% else %}&nbsp;{% endif %}
                                     </span>
                                 </a>
                             </th>
                             <th class="sortable-column" style="width: 250px;">
                                 <a href="{{ url_for('dashboard', sort_by='subject', sort_order='asc' if sort_by != 'subject' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                   class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
+                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
                                     <span>Тема</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'subject' %}
-                                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
                                         {% else %}&nbsp;{% endif %}
                                     </span>
                                 </a>
                             </th>
                             <th class="sortable-column" style="width: 150px;">
                                 <a href="{{ url_for('dashboard', sort_by='created_at', sort_order='asc' if sort_by != 'created_at' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                   class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
+                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
                                     <span>Дата</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'created_at' %}
-                                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
                                         {% else %}&nbsp;{% endif %}
                                     </span>
                                 </a>
@@ -149,11 +206,11 @@
                             <th style="width:110px;">Статус</th>
                             <th class="sortable-column" style="width: 150px;">
                                 <a href="{{ url_for('dashboard', sort_by='assigned_username', sort_order='asc' if sort_by != 'assigned_username' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                   class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
+                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
                                     <span>Ответственный</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'assigned_username' %}
-                                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
                                         {% else %}&nbsp;{% endif %}
                                     </span>
                                 </a>
@@ -162,11 +219,13 @@
                     </thead>
                     <tbody>
                         {% for ticket in tickets %}
-                        <tr class="ticket-row" onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
+                        <tr class="ticket-row"
+                            onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
                             {% if session["role"] != "client" %}
-                                <td>
-                                    <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="form-check-input" onchange="highlightRow(this); event.stopPropagation();">
-                                </td>
+                            <td>
+                                <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}"
+                                    class="form-check-input" onchange="highlightRow(this); event.stopPropagation();">
+                            </td>
                             {% endif %}
                             <td>{{ ticket.id }}</td>
                             <td>{{ ticket.sender | decode_mime }}</td>
@@ -174,13 +233,13 @@
                             <td>{{ ticket.created_at }}</td>
                             <td>
                                 {% if ticket.status == 'новая' %}
-                                    <span class="ticket-status-badge novaya">Новая</span>
+                                <span class="ticket-status-badge novaya">Новая</span>
                                 {% elif ticket.status == 'в работе' %}
-                                    <span class="ticket-status-badge vrabote">В работе</span>
+                                <span class="ticket-status-badge vrabote">В работе</span>
                                 {% elif ticket.status == 'завершена' %}
-                                    <span class="ticket-status-badge zavershena">Завершена</span>
+                                <span class="ticket-status-badge zavershena">Завершена</span>
                                 {% else %}
-                                    <span class="ticket-status-badge">{{ ticket.status }}</span>
+                                <span class="ticket-status-badge">{{ ticket.status }}</span>
                                 {% endif %}
                             </td>
                             <td>{{ ticket.assigned_username }}</td>
@@ -190,7 +249,8 @@
                 </table>
             </div>
             <div class="mt-3" style="max-width: 220px;">
-                <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Удалить выбранные заявки?')">
+                <button type="submit" class="btn btn-danger w-100"
+                    onclick="return confirm('Удалить выбранные заявки?')">
                     <i class="bi bi-trash"></i> Удалить выбранные
                 </button>
             </div>
@@ -200,15 +260,19 @@
         <nav aria-label="Пагинация" class="mt-3">
             <ul class="pagination">
                 <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('dashboard', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">‹</a>
+                    <a class="page-link"
+                        href="{{ url_for('dashboard', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">‹</a>
                 </li>
                 {% for p in range(1, total_pages + 1) %}
                 <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('dashboard', page=p, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">{{ p }}</a>
+                    <a class="page-link"
+                        href="{{ url_for('dashboard', page=p, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">{{
+                        p }}</a>
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('dashboard', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">›</a>
+                    <a class="page-link"
+                        href="{{ url_for('dashboard', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">›</a>
                 </li>
             </ul>
         </nav>
@@ -217,16 +281,17 @@
         <form method="get" class="mt-3 d-flex justify-content-center">
             <label class="me-2">Заявок на странице:</label>
             <select name="per_page" class="form-select w-auto" onchange="this.form.submit()">
-                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
-                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
-                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                <option value="20" {% if per_page==20 %}selected{% endif %}>20</option>
+                <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
             </select>
         </form>
         {% else %}
-            <p class="text-muted">Заявок пока нет.</p>
+        <p class="text-muted">Заявок пока нет.</p>
         {% endif %}
     </div>
 </div>
+
 
 <script>
     function toggleAll(source) {
@@ -244,8 +309,8 @@
             row.classList.remove('selected');
         }
     }
-    window.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('input[name="ticket_ids"]').forEach(function(cb) {
+    window.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('input[name="ticket_ids"]').forEach(function (cb) {
             highlightRow(cb);
         });
     });

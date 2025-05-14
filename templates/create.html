@@ -16,23 +16,26 @@
         flex-direction: column;
         gap: 2.5rem;
     }
+
     @media (max-width: 767px) {
         .ticket-main-card {
             padding: 1.2rem 0.5rem;
             border-radius: 1rem;
         }
     }
+
     .ticket-title-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 1rem;
     }
+
     .ticket-title-row h2 {
         font-size: 2.2rem;
         font-weight: 700;
         margin-bottom: 0;
     }
+
     .ticket-form-block {
         background: #f8fafd;
         border-radius: 1.2rem;
@@ -40,6 +43,7 @@
         margin-top: 1.5rem;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
     }
+
     .ticket-btn-main {
         font-size: 1.25rem;
         padding: 0.9rem 0;
@@ -49,71 +53,71 @@
     }
 </style>
 
-<div class="container-fluid py-4" style="min-height: 80vh;">
-    <div class="ticket-main-card">
-        <!-- Заголовок -->
-        <div class="ticket-title-row">
-            <h2>Создать новую заявку</h2>
-        </div>
+<div class="ticket-main-card">
+    <!-- Заголовок -->
+    <div class="ticket-title-row">
+        <h2>Создать новую заявку</h2>
+    </div>
 
-        <!-- Форма создания заявки -->
-        <div class="ticket-form-block">
-            <form method="POST" enctype="multipart/form-data">
-                <div class="row g-4">
-                    <div class="col-12 col-md-6">
-                        <label for="subject" class="form-label">Тема</label>
-                        <input type="text" name="subject" class="form-control form-control-lg" id="subject" required>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="file" class="form-label">Вложение (необязательно)</label>
-                        <input type="file" class="form-control" id="file" name="files[]" multiple accept=".jpg,.jpeg,.png,.pdf,.docx">
-                        <small class="form-text text-muted">Форматы: .jpg, .png, .pdf, .docx. До 16 МБ каждый.</small>
-                    </div>
-                    <div class="col-12">
-                        <label for="body" class="form-label">Описание</label>
-                        <textarea name="body" class="form-control form-control-lg" id="body" rows="5" required></textarea>
-                    </div>
+    <!-- Форма создания заявки -->
+    <div class="ticket-form-block">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <label for="subject" class="form-label">Тема</label>
+                    <input type="text" name="subject" class="form-control form-control-lg" id="subject" required>
                 </div>
-                <div id="preview-container" class="mt-4" style="display: none;">
-                    <label class="form-label">Предпросмотр:</label>
-                    <div id="preview-images" class="d-flex flex-wrap gap-2"></div>
+                <div class="col-12 col-md-6">
+                    <label for="file" class="form-label">Вложение (необязательно)</label>
+                    <input type="file" class="form-control" id="file" name="files[]" multiple
+                        accept=".jpg,.jpeg,.png,.pdf,.docx">
+                    <small class="form-text text-muted">Форматы: .jpg, .png, .pdf, .docx. До 16 МБ каждый.</small>
                 </div>
-                <div class="text-end mt-4">
-                    <button type="submit" class="btn btn-primary ticket-btn-main px-5">
-                        <i class="bi bi-plus-circle me-2"></i>Создать заявку
-                    </button>
+                <div class="col-12">
+                    <label for="body" class="form-label">Описание</label>
+                    <textarea name="body" class="form-control form-control-lg" id="body" rows="5" required></textarea>
                 </div>
-            </form>
-        </div>
+            </div>
+            <div id="preview-container" class="mt-4" style="display: none;">
+                <label class="form-label">Предпросмотр:</label>
+                <div id="preview-images" class="d-flex flex-wrap gap-2"></div>
+            </div>
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary ticket-btn-main px-5">
+                    <i class="bi bi-plus-circle me-2"></i>Создать заявку
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
+
 <script>
-  // Предпросмотр изображений
-  document.getElementById('file').addEventListener('change', function(event) {
-      var files = event.target.files;
-      var previewContainer = document.getElementById('preview-container');
-      var previewImages = document.getElementById('preview-images');
-      previewImages.innerHTML = '';
-      if (files.length > 0) {
-          previewContainer.style.display = 'block';
-          Array.from(files).forEach(function(file) {
-              if (file.type.startsWith('image/')) {
-                  var reader = new FileReader();
-                  reader.onload = function(e) {
-                      var img = document.createElement('img');
-                      img.src = e.target.result;
-                      img.classList.add('img-thumbnail');
-                      img.style.maxHeight = '140px';
-                      img.style.maxWidth = '140px';
-                      previewImages.appendChild(img);
-                  };
-                  reader.readAsDataURL(file);
-              }
-          });
-      } else {
-          previewContainer.style.display = 'none';
-      }
-  });
+    // Предпросмотр изображений
+    document.getElementById('file').addEventListener('change', function (event) {
+        var files = event.target.files;
+        var previewContainer = document.getElementById('preview-container');
+        var previewImages = document.getElementById('preview-images');
+        previewImages.innerHTML = '';
+        if (files.length > 0) {
+            previewContainer.style.display = 'block';
+            Array.from(files).forEach(function (file) {
+                if (file.type.startsWith('image/')) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.classList.add('img-thumbnail');
+                        img.style.maxHeight = '140px';
+                        img.style.maxWidth = '140px';
+                        previewImages.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    });
 </script>
 {% endblock %}

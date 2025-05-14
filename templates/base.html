@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Моя система{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css"
+        rel="stylesheet">
     <style>
-        body { overflow-x: hidden; }
+        html {
+            overflow-y: scroll;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
         .sidebar {
             min-height: 100vh;
             width: 250px;
@@ -23,7 +32,11 @@
             flex-direction: column;
             align-items: center;
         }
-        .sidebar.collapsed { width: 60px; }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
         .avatar-wrapper {
             width: 100%;
             display: flex;
@@ -31,12 +44,14 @@
             align-items: center;
             padding: 2rem 0 1.2rem 0;
         }
+
         .avatar-link {
             display: flex;
             flex-direction: column;
             align-items: center;
             text-decoration: none;
         }
+
         .avatar-link img {
             width: 50px;
             height: 50px;
@@ -44,6 +59,7 @@
             border-radius: 50%;
             border: 2px solid #0d6dfd;
         }
+
         .avatar-link span {
             margin-top: 0.5rem;
             font-size: 1.1rem;
@@ -52,11 +68,13 @@
             white-space: nowrap;
             transition: opacity 0.2s;
         }
+
         .sidebar.collapsed .avatar-link span {
             opacity: 0;
             width: 0;
             display: inline-block;
         }
+
         .sidebar .nav-link {
             color: #333;
             font-size: 1.15rem;
@@ -64,25 +82,31 @@
             transition: background 0.2s, color 0.2s;
             white-space: nowrap;
         }
-        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+
+        .sidebar .nav-link.active,
+        .sidebar .nav-link:hover {
             background: #e9ecef;
             font-weight: bold;
             color: #0d6dfd;
             border-radius: 0.375rem;
         }
+
         .sidebar .nav-link .sidebar-text {
             transition: opacity 0.2s;
         }
+
         .sidebar.collapsed .sidebar-text {
             opacity: 0;
             width: 0;
             display: inline-block;
         }
+
         .sidebar.collapsed .nav-link {
             text-align: center;
             padding-left: 0.5rem;
             padding-right: 0.5rem;
         }
+
         /* Кнопка-ручка для сворачивания */
         .sidebar-toggler {
             position: absolute;
@@ -100,25 +124,61 @@
             align-items: center;
             justify-content: center;
         }
-        .sidebar:hover .sidebar-toggler { opacity: 1; }
-        .sidebar-toggler:focus { outline: none; }
-        .sidebar-toggler:hover { background: #f1f1f1; opacity: 1; }
+
+        .sidebar:hover .sidebar-toggler {
+            opacity: 1;
+        }
+
+        .sidebar-toggler:focus {
+            outline: none;
+        }
+
+        .sidebar-toggler:hover {
+            background: #f1f1f1;
+            opacity: 1;
+        }
+
         .content-area {
             margin-left: 250px;
             transition: margin-left 0.2s;
             padding-top: 32px;
         }
-        .sidebar.collapsed ~ .content-area {
+
+        .sidebar.collapsed~.content-area {
             margin-left: 60px;
         }
+
         @media (max-width: 991.98px) {
-            .sidebar { left: -250px; transition: left 0.2s; }
-            .sidebar.show { left: 0; }
-            .content-area { margin-left: 0; padding-top: 32px; }
+            .sidebar {
+                left: -250px;
+                transition: left 0.2s;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .content-area {
+                margin-left: 0;
+                padding-top: 32px;
+            }
         }
-        th, td { padding-top: 1.1rem !important; padding-bottom: 1.1rem !important; font-size: 1.15rem !important; }
-        .ticket-row:hover { background-color: #f0f0f0; }
-        .table-responsive { overflow-x: auto; }
+
+        th,
+        td {
+            padding-top: 1.1rem !important;
+            padding-bottom: 1.1rem !important;
+            font-size: 1.15rem !important;
+        }
+
+        .ticket-row:hover {
+            background-color: #f0f0f0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
         /* Светлый футер */
         footer {
             background-color: #f8f9fa;
@@ -128,8 +188,16 @@
             text-align: center;
             border-top: 1px solid #e0e0e0;
         }
-        footer a { color: #0d6efd; text-decoration: none; }
-        footer a:hover { text-decoration: underline; }
+
+        footer a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
         /* Flash поверх всего */
         .flash-overlay-container {
             z-index: 1080;
@@ -137,106 +205,112 @@
             max-width: 600px;
             pointer-events: none;
         }
+
         .flash-overlay-container .alert {
             pointer-events: auto;
         }
     </style>
 </head>
+
 <body class="bg-light d-flex flex-column min-vh-100">
 
-  <!-- Flash-уведомления поверх всего -->
-  <div class="flash-overlay-container position-fixed top-0 start-50 translate-middle-x">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+    <!-- Flash-уведомления поверх всего -->
+    <div class="flash-overlay-container position-fixed top-0 start-50 translate-middle-x">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show mt-3 mx-auto"
-               role="alert">
+        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3 mx-auto" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
-          </div>
+        </div>
         {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </div>
+        {% endif %}
+        {% endwith %}
+    </div>
 
-  <!-- Sidebar -->
-  <nav id="sidebar" class="sidebar d-none d-lg-flex">
-      <div class="avatar-wrapper">
-          <a href="{{ url_for('profile') }}" class="avatar-link" title="Профиль">
-              <img src="{{ url_for('uploaded_file', filename=session.get('user_avatar', 'default_avatar.png')) }}" alt="Аватар">
-              <span>{{ session.get('user', 'Профиль') }}</span>
-          </a>
-      </div>
-      <button class="sidebar-toggler" id="sidebarToggle" title="Свернуть/развернуть меню">
-          <i class="bi bi-chevron-left"></i>
-      </button>
-      <ul class="nav flex-column mt-4 w-100">
-          <li class="nav-item mb-2">
-              <a class="nav-link d-flex align-items-center {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                  <i class="bi bi-house-door me-2"></i>
-                  <span class="sidebar-text">Главная</span>
-              </a>
-          </li>
-          <li class="nav-item mb-2">
-              <a class="nav-link d-flex align-items-center {% if request.endpoint=='create' %}active{% endif %}" href="{{ url_for('create') }}">
-                  <i class="bi bi-plus-circle me-2"></i>
-                  <span class="sidebar-text">Новая заявка</span>
-              </a>
-          </li>
-          {% if session.get('role') == 'admin' %}
-          <li class="nav-item mb-2">
-              <a class="nav-link d-flex align-items-center {% if request.endpoint=='admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
-                  <i class="bi bi-shield-lock me-2"></i>
-                  <span class="sidebar-text">Админка</span>
-              </a>
-          </li>
-          {% endif %}
-          <li class="nav-item mt-4">
-              <a class="nav-link text-danger d-flex align-items-center" href="{{ url_for('logout') }}">
-                  <i class="bi bi-box-arrow-right me-2"></i>
-                  <span class="sidebar-text">Выйти</span>
-              </a>
-          </li>
-      </ul>
-  </nav>
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar d-none d-lg-flex">
+        <div class="avatar-wrapper">
+            <a href="{{ url_for('profile') }}" class="avatar-link" title="Профиль">
+                <img src="{{ url_for('uploaded_file', filename=session.get('user_avatar', 'default_avatar.png')) }}"
+                    alt="Аватар">
+                <span>{{ session.get('user', 'Профиль') }}</span>
+            </a>
+        </div>
+        <button class="sidebar-toggler" id="sidebarToggle" title="Свернуть/развернуть меню">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <ul class="nav flex-column mt-4 w-100">
+            <li class="nav-item mb-2">
+                <a class="nav-link d-flex align-items-center {% if request.endpoint=='dashboard' %}active{% endif %}"
+                    href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-house-door me-2"></i>
+                    <span class="sidebar-text">Главная</span>
+                </a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="nav-link d-flex align-items-center {% if request.endpoint=='create' %}active{% endif %}"
+                    href="{{ url_for('create') }}">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    <span class="sidebar-text">Новая заявка</span>
+                </a>
+            </li>
+            {% if session.get('role') == 'admin' %}
+            <li class="nav-item mb-2">
+                <a class="nav-link d-flex align-items-center {% if request.endpoint=='admin_dashboard' %}active{% endif %}"
+                    href="{{ url_for('admin_dashboard') }}">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    <span class="sidebar-text">Админ-панель</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item mt-4">
+                <a class="nav-link text-danger d-flex align-items-center" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    <span class="sidebar-text">Выйти</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 
-  <!-- Основной контент -->
-  <div class="content-area">
-      <div class="container-fluid">
-          <h2 class="mb-4">{% block page_title %}{% endblock %}</h2>
-          {% block content %}{% endblock %}
-      </div>
-  </div>
+    <!-- Основной контент -->
+    <div class="content-area">
+        <div class="container-fluid">
+            <h2 class="mb-4">{% block page_title %}{% endblock %}</h2>
+            {% block content %}{% endblock %}
+        </div>
+    </div>
 
-  <footer class="text-center mt-auto">
-      <p>&copy; 2025 Захар Закиев. Все права защищены.</p>
-      <p>Разработка web-приложения для автоматизации работы службы технической поддержки.</p>
-  </footer>
+    <footer class="text-center mt-auto">
+        <p>&copy; 2025 Захар Закиев. Все права защищены.</p>
+        <p>Разработка web-приложения для автоматизации работы службы технической поддержки.</p>
+    </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-      // Свернуть/развернуть sidebar на десктопе
-      document.getElementById('sidebarToggle').onclick = function() {
-          let sidebar = document.getElementById('sidebar');
-          sidebar.classList.toggle('collapsed');
-          document.querySelector('.content-area').classList.toggle('sidebar-collapsed');
-          let icon = this.querySelector('i');
-          if (sidebar.classList.contains('collapsed')) {
-              icon.classList.remove('bi-chevron-left');
-              icon.classList.add('bi-chevron-right');
-          } else {
-              icon.classList.remove('bi-chevron-right');
-              icon.classList.add('bi-chevron-left');
-          }
-      };
-      // Автоматическое скрытие уведомлений через 4 секунды
-      setTimeout(function() {
-        var alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-          var bsAlert = new bootstrap.Alert(alert);
-          bsAlert.close();
-        });
-      }, 4000);
-  </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Свернуть/развернуть sidebar на десктопе
+        document.getElementById('sidebarToggle').onclick = function () {
+            let sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            document.querySelector('.content-area').classList.toggle('sidebar-collapsed');
+            let icon = this.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.classList.remove('bi-chevron-left');
+                icon.classList.add('bi-chevron-right');
+            } else {
+                icon.classList.remove('bi-chevron-right');
+                icon.classList.add('bi-chevron-left');
+            }
+        };
+        // Автоматическое скрытие уведомлений через 4 секунды
+        setTimeout(function () {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function (alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 4000);
+    </script>
 </body>
+
 </html>
