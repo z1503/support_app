@@ -17,7 +17,16 @@
         gap: 2.5rem;
     }
 
+    /* Мобильная версия */
     @media (max-width: 767px) {
+        .desktop-users-block {
+            display: none !important;
+        }
+
+        .mobile-users-block {
+            display: block !important;
+        }
+
         .ticket-main-card {
             padding: 0.6rem 0.2rem;
             border-radius: 1rem;
@@ -32,14 +41,6 @@
             padding: 0.7rem 0.3rem;
             border-radius: 0.7rem;
             margin-top: 1rem;
-        }
-
-        .table-users,
-        .table-users thead,
-        .table-users tbody,
-        .table-users th,
-        .table-users tr {
-            display: none !important;
         }
 
         .mobile-users-list {
@@ -191,10 +192,13 @@
         }
     }
 
+    /* Десктопная версия */
     @media (min-width: 768px) {
+        .desktop-users-block {
+            display: block !important;
+        }
 
-        .mobile-users-list,
-        .mobile-users-actions-bar {
+        .mobile-users-block {
             display: none !important;
         }
     }
@@ -327,91 +331,99 @@
     </div>
 
     <div class="ticket-form-block">
-        <!-- Мобильные карточки пользователей -->
-        <form method="POST" id="delete-users-form" action="{{ url_for('delete_selected_users') }}">
-            <div class="mobile-users-actions-bar">
-            </div>
-            <div class="mobile-users-list">
-                {% for user in users %}
-                <div class="mobile-user-card">
-                    <input type="checkbox" name="user_ids" value="{{ user.id }}"
-                        class="form-check-input mobile-user-checkbox" onchange="event.stopPropagation();">
-                    <div class="mobile-user-header">
-                        <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
-                            alt="Аватар" class="mobile-user-avatar">
-                        <div class="mobile-user-info">
-                            <span class="mobile-user-id">ID {{ user.id }}</span>
-                            <span class="mobile-user-username">{{ user.username }}</span>
-                            <span class="mobile-user-email">{{ user.email }}</span>
-                            <span class="mobile-user-role user-role-badge {{ user.role }}">{{ user.role }}</span>
+        <!-- Мобильная версия -->
+        <div class="mobile-users-block">
+            <form method="POST" id="delete-users-form-mobile" action="{{ url_for('delete_selected_users') }}">
+                <div class="mobile-users-list">
+                    {% for user in users %}
+                    <div class="mobile-user-card">
+                        <input type="checkbox" name="user_ids" value="{{ user.id }}"
+                            class="form-check-input mobile-user-checkbox" onchange="event.stopPropagation();">
+                        <div class="mobile-user-header">
+                            <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
+                                alt="Аватар" class="mobile-user-avatar">
+                            <div class="mobile-user-info">
+                                <span class="mobile-user-id">ID {{ user.id }}</span>
+                                <span class="mobile-user-username">{{ user.username }}</span>
+                                <span class="mobile-user-email">{{ user.email }}</span>
+                                <span class="mobile-user-role user-role-badge {{ user.role }}">{{ user.role }}</span>
+                            </div>
+                        </div>
+                        <div class="mobile-user-actions">
+                            <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn"
+                                title="Редактировать">
+                                <i class="bi bi-pencil"></i>
+                            </a>
                         </div>
                     </div>
-                    <div class="mobile-user-actions">
-                        <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn"
-                            title="Редактировать">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-        </form>
+                <div class="mobile-users-actions-bar">
+                    <button type="submit" class="btn btn-danger w-100"
+                        onclick="return confirm('Удалить выбранных пользователей?')">
+                        <i class="bi bi-trash"></i> Удалить выбранных
+                    </button>
+                </div>
+            </form>
+        </div>
 
-        <!-- Десктопная таблица -->
-        <form method="POST" id="delete-users-form-desktop" action="{{ url_for('delete_selected_users') }}">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-users mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width:38px;">
-                                <input type="checkbox" id="select-all" class="form-check-input"
-                                    onclick="toggleAll(this)">
-                            </th>
-                            <th style="width:60px;">Фото</th>
-                            <th style="width:60px;">ID</th>
-                            <th>Имя пользователя</th>
-                            <th>Email</th>
-                            <th style="width:110px;">Роль</th>
-                            <th class="text-end" style="width:70px;">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="user_ids" value="{{ user.id }}" class="form-check-input"
-                                    onchange="highlightRow(this)">
-                            </td>
-                            <td>
-                                <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
-                                    alt="Аватар" class="user-table-avatar">
-                            </td>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>
-                                <span class="user-role-badge {{ user.role }}">
-                                    {{ user.role }}
-                                </span>
-                            </td>
-                            <td class="text-end">
-                                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn"
-                                    title="Редактировать">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-3" style="max-width: 220px;">
-                <button type="submit" class="btn btn-danger w-100"
-                    onclick="return confirm('Удалить выбранных пользователей?')">
-                    <i class="bi bi-trash"></i> Удалить выбранных
-                </button>
-            </div>
-        </form>
+        <!-- Десктопная версия -->
+        <div class="desktop-users-block">
+            <form method="POST" id="delete-users-form-desktop" action="{{ url_for('delete_selected_users') }}">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-users mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:38px;">
+                                    <input type="checkbox" id="select-all" class="form-check-input"
+                                        onclick="toggleAll(this)">
+                                </th>
+                                <th style="width:60px;">Фото</th>
+                                <th style="width:60px;">ID</th>
+                                <th>Имя пользователя</th>
+                                <th>Email</th>
+                                <th style="width:110px;">Роль</th>
+                                <th class="text-end" style="width:70px;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="user_ids" value="{{ user.id }}"
+                                        class="form-check-input" onchange="highlightRow(this)">
+                                </td>
+                                <td>
+                                    <img src="{{ url_for('static', filename='uploads/' ~ (user.avatar if user.avatar else 'default_avatar.png')) }}"
+                                        alt="Аватар" class="user-table-avatar">
+                                </td>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    <span class="user-role-badge {{ user.role }}">
+                                        {{ user.role }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('edit_user', user_id=user.id) }}" class="user-action-btn"
+                                        title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3" style="max-width: 220px;">
+                    <button type="submit" class="btn btn-danger w-100"
+                        onclick="return confirm('Удалить выбранных пользователей?')">
+                        <i class="bi bi-trash"></i> Удалить выбранных
+                    </button>
+                </div>
+            </form>
+        </div>
 
         <hr class="my-4">
         <h4>Добавить нового пользователя</h4>
@@ -445,7 +457,7 @@
 
 <script>
     function toggleAll(source) {
-        const checkboxes = document.getElementsByName('user_ids');
+        const checkboxes = document.querySelectorAll('.desktop-users-block input[name="user_ids"]');
         for (let i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = source.checked;
             highlightRow(checkboxes[i]);
@@ -462,7 +474,7 @@
         }
     }
     window.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('input[name="user_ids"]').forEach(function (cb) {
+        document.querySelectorAll('.desktop-users-block input[name="user_ids"]').forEach(function (cb) {
             highlightRow(cb);
         });
     });
