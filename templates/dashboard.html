@@ -4,215 +4,295 @@
 
 {% block content %}
 <style>
-.ticket-main-card {
-    max-width: 1200px;
-    margin: 0 auto;
-    border-radius: 2rem;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
-    background: #fff;
-    padding: 2.5rem 2rem 2rem 2rem;
-    min-height: 70vh;
-    display: flex;
-    flex-direction: column;
-    gap: 2.5rem;
-}
-@media (max-width: 767px) {
     .ticket-main-card {
-        padding: 0.6rem 0.2rem;
-        border-radius: 0.6rem;
-    }
-    .ticket-form-block {
-        padding: 0.7rem 0.3rem;
-        border-radius: 0.4rem;
-    }
-    .table-tickets, .table-tickets thead, .table-tickets tbody, .table-tickets th, .table-tickets tr {
-        display: none !important;
-    }
-    .mobile-tickets-list {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
-        margin-top: 1rem;
+        gap: 2.5rem;
     }
-    .mobile-ticket-card {
+
+    .table-responsive {
+        border-radius: 1.2em;
+        overflow-x: auto;
+        background: transparent;
+        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.07);
+        margin-bottom: 2.5rem;
+    }
+
+    .table-tickets {
+        border-collapse: separate;
+        border-spacing: 0 0.8em;
+        width: 100%;
+        background: transparent;
+        table-layout: fixed;
+    }
+
+    .table-tickets th,
+    .table-tickets td {
         background: #fff;
-        border-radius: 1rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        padding: 1.1rem 1rem 0.7rem 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-        position: relative;
-        transition: box-shadow 0.2s;
-        cursor: pointer;
-        min-height: 120px;
+        border: none;
+        padding: 13px 8px;
+        vertical-align: middle;
+        font-size: 1.04em;
+        transition: background 0.18s;
+        overflow: hidden;
     }
-    .mobile-ticket-card:active, .mobile-ticket-card:focus {
-        box-shadow: 0 4px 18px rgba(30, 70, 200, 0.16);
+
+    .table-tickets th.checkbox-col,
+    .table-tickets td.checkbox-col {
+        width: 36px;
+        min-width: 36px;
+        max-width: 36px;
+        padding: 0 4px;
+        text-align: center;
     }
-    /* Чекбокс в правом верхнем углу */
-    .mobile-checkbox-wrap {
-        position: absolute;
-        top: 0.7rem;
-        right: 0.7rem;
-        z-index: 2;
-        background: #fff;
-        border-radius: 0.4em;
-        padding: 0.12em;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+
+    .table-tickets th.number-col,
+    .table-tickets td.number-col {
+        width: 54px;
+        min-width: 40px;
+        max-width: 54px;
+        padding-left: 0;
+        text-align: left;
     }
-    .mobile-ticket-checkbox {
-        width: 1.3em;
-        height: 1.3em;
-        accent-color: #0d6efd;
-        border-radius: 0.3em;
-        margin: 0;
+
+    .table-tickets th.sender-col,
+    .table-tickets td.sender-col {
+        width: 150px;
+        min-width: 100px;
+        max-width: 150px;
+        text-align: left;
     }
-    .mobile-ticket-header {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 0.7rem;
-        margin-right: 2.2em; /* чтобы не наезжать на чекбокс */
+
+    .table-tickets th.status-col,
+    .table-tickets td.status-col {
+        width: 150px;
+        min-width: 150px;
+        max-width: 150px;
+        text-align: left;
     }
-    .mobile-ticket-id {
+
+    .table-tickets th.assigned-col,
+    .table-tickets td.assigned-col {
+        width: 140px;
+        min-width: 100px;
+        max-width: 180px;
+        text-align: left;
+    }
+
+    .table-tickets th.date-col,
+    .table-tickets td.date-col {
+        width: 110px;
+        min-width: 90px;
+        max-width: 120px;
+        text-align: left;
+    }
+
+    .table-tickets th {
+        color: #222;
         font-weight: 700;
-        font-size: 1.1rem;
-        color: #0d6efd;
+        background: #f3f7fa;
+        border-bottom: 2px solid #e0e4eb;
         letter-spacing: 0.03em;
     }
-    .mobile-ticket-status {
-        font-size: 0.95em;
+
+    .table-tickets td {
+        font-size: 1.04em;
+    }
+
+    .table-tickets tbody tr {
+        border-radius: 1.1em;
+        box-shadow: 0 2px 18px rgba(30, 70, 200, 0.04);
+        transition: box-shadow 0.2s, background 0.2s;
+        cursor: pointer;
+    }
+
+    .table-tickets tbody tr:hover {
+        background: #f0f6ff;
+        box-shadow: 0 4px 24px rgba(30, 70, 200, 0.09);
+    }
+
+    .table-tickets td:first-child,
+    .table-tickets th:first-child {
+        border-top-left-radius: 1em;
+        border-bottom-left-radius: 1em;
+    }
+
+    .table-tickets td:last-child,
+    .table-tickets th:last-child {
+        border-top-right-radius: 1em;
+        border-bottom-right-radius: 1em;
+    }
+
+    .ticket-status-badge {
+        border-radius: 1.2em;
+        padding: 0.35em 0.85em;
+        font-size: 0.97em;
         font-weight: 600;
-        border-radius: 0.7em;
-        padding: 0.3em 0.8em;
+        min-width: 70px;
+        max-width: 110px;
+        text-align: center;
+        letter-spacing: 0.02em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         display: inline-block;
     }
-    .mobile-ticket-status.novaya { background: #e7fbe7; color: #198754; }
-    .mobile-ticket-status.vrabote { background: #fffbe7; color: #b8860b; }
-    .mobile-ticket-status.zavershena { background: #f1f1f1; color: #555; }
-    .mobile-ticket-main {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
+
+    .ticket-status-badge.novaya {
+        background: #e7fbe7;
+        color: #198754;
     }
-    .mobile-ticket-subject {
-        font-size: 1.03rem;
-        font-weight: 500;
-        margin-bottom: 0.15rem;
-        color: #222;
+
+    .ticket-status-badge.vrabote {
+        background: #fffbe7;
+        color: #b8860b;
     }
-    .mobile-ticket-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem 1.2rem;
-        font-size: 0.97em;
-        color: #666;
+
+    .ticket-status-badge.zavershena {
+        background: #f1f1f1;
+        color: #555;
     }
-    .mobile-ticket-meta span {
+
+    .table-tickets input[type="checkbox"] {
+        width: 1em;
+        height: 1em;
+        accent-color: #0d6efd;
+        border-radius: 0.2em;
+        margin: 0;
+        box-shadow: none;
+        vertical-align: middle;
+    }
+
+    .sortable-column a {
+        color: inherit;
+        text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 0.3em;
+        gap: 0.2em;
+        font-weight: 600;
     }
-    /* Скрываем футер карточки (кнопку) */
-    .mobile-ticket-footer {
-        display: none !important;
+
+    .sort-arrow {
+        font-size: 1.1em;
+        opacity: 0.7;
     }
-}
-@media (min-width: 768px) {
-    .mobile-tickets-list {
-        display: none !important;
+
+    .table-tickets td.sender-col,
+    .table-tickets td.subject-col {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.2;
+        min-width: 80px;
+        max-width: 220px;
     }
-}
-.ticket-title-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.ticket-title-row h2 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin-bottom: 0;
-}
-.ticket-form-block {
-    background: #f8fafd;
-    border-radius: 1.2rem;
-    padding: 1.5rem 1.2rem;
-    margin-top: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-}
-.ticket-status-badge.novaya {
-    background: #e7fbe7;
-    color: #198754;
-}
-.ticket-status-badge.vrabote {
-    background: #fffbe7;
-    color: #b8860b;
-}
-.ticket-status-badge.zavershena {
-    background: #f1f1f1;
-    color: #555;
-}
-.ticket-status-badge {
-    border-radius: 1em;
-    padding: 0.4em 1em;
-    font-size: 1em;
-    font-weight: 500;
-    display: inline-block;
-    min-width: 80px;
-    text-align: center;
-}
-.table-tickets tr.selected,
-.table-tickets tr.selected:hover {
-    background: #e9f5ff !important;
-}
-.table-tickets tr:hover {
-    background: #f5faff;
-}
-.table-tickets th,
-.table-tickets td {
-    vertical-align: middle;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    border-bottom: 1px solid #f1f1f1;
-}
-.table-tickets th {
-    background: #f8f9fa;
-    font-weight: 600;
-    font-size: 1.08em;
-    border-top: none;
-    border-bottom: 2px solid #e0e0e0;
-}
-.table-tickets td {
-    font-size: 1.05em;
-}
-.table-responsive {
-    border-radius: 1.1em;
-    overflow: auto;
-}
-.form-check-input {
-    width: 1.3em;
-    height: 1.3em;
-    margin-top: 0;
-}
-.sortable-column a {
-    user-select: none;
-}
-.sort-arrow {
-    font-size: 1.1em;
-    margin-left: 0.3em;
-}
+
+    .table-tickets td.sender-col {
+        color: #444;
+        font-weight: 500;
+    }
+
+    .table-tickets td.subject-col {
+        color: #222;
+    }
+
+    @media (max-width: 767px) {
+        .table-responsive,
+        .table-tickets,
+        .table-tickets th,
+        .table-tickets td,
+        .table-tickets tr {
+            display: none !important;
+        }
+
+        /* Мобильные карточки */
+        .mobile-tickets-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .mobile-ticket-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 1.1rem 1rem 0.7rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            position: relative;
+            min-height: 120px;
+            cursor: pointer;
+        }
+        .mobile-checkbox-wrap {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            z-index: 2;
+            border-radius: 0.4em;
+            padding: 0.12em;
+            
+        }
+        .mobile-ticket-checkbox {
+            width: 1.2em;
+            height: 1.2em;
+            accent-color: #0d6efd;
+            border-radius: 0.3em;
+            margin: 0;
+        }
+        .mobile-ticket-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.7rem;
+            margin-right: 2.2em; 
+        }
+        .mobile-ticket-id {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0d6efd;
+        }
+        .mobile-ticket-status.novaya { background: #e7fbe7; color: #198754; border-radius: 0.7em; padding: 0.3em 0.8em;}
+        .mobile-ticket-status.vrabote { background: #fffbe7; color: #b8860b; border-radius: 0.7em; padding: 0.3em 0.8em;}
+        .mobile-ticket-status.zavershena { background: #f1f1f1; color: #555; border-radius: 0.7em; padding: 0.3em 0.8em;}
+        .mobile-ticket-main {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .mobile-ticket-subject {
+            font-size: 1.03rem;
+            font-weight: 500;
+            margin-bottom: 0.15rem;
+            color: #222;
+        }
+        .mobile-ticket-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.2rem;
+            font-size: 0.97em;
+            color: #666;
+        }
+        .mobile-ticket-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3em;
+        }
+    }
 </style>
 
 <div class="ticket-main-card">
     <div class="ticket-title-row">
         <h2>Панель заявок</h2>
     </div>
-
     <div class="ticket-form-block">
-
-        <!-- Форма фильтрации -->
         <form method="get" class="row g-2 mb-3">
             <div class="col-auto">
                 <select name="status_filter" class="form-select">
@@ -226,111 +306,109 @@
                 <button type="submit" class="btn btn-primary">Применить</button>
             </div>
         </form>
-
         {% if tickets %}
         <!-- Мобильные карточки -->
-        <div class="mobile-tickets-list">
-            {% for ticket in tickets|sort(attribute='status') %}
-                <div class="mobile-ticket-card" tabindex="0" onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
-                    {% if session["role"] != "client" %}
-                    <span class="mobile-checkbox-wrap" onclick="event.stopPropagation();">
-                        <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="mobile-ticket-checkbox">
+        <div class="mobile-tickets-list d-md-none">
+            {% for ticket in tickets %}
+            <div class="mobile-ticket-card" onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
+                {% if session["role"] != "client" %}
+                <span class="mobile-checkbox-wrap" onclick="event.stopPropagation();">
+                    <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="mobile-ticket-checkbox">
+                </span>
+                {% endif %}
+                <div class="mobile-ticket-header">
+                    <span class="mobile-ticket-id">#{{ ticket.id }}</span>
+                    <span class="mobile-ticket-status
+                        {% if ticket.status == 'новая' %}novaya{% elif ticket.status == 'в работе' %}vrabote{% elif ticket.status == 'завершена' %}zavershena{% endif %}">
+                        {{ ticket.status|capitalize }}
                     </span>
-                    {% endif %}
-                    <div class="mobile-ticket-header">
-                        <span class="mobile-ticket-id">#{{ ticket.id }}</span>
-                        <span class="mobile-ticket-status
-                            {% if ticket.status == 'новая' %}novaya{% elif ticket.status == 'в работе' %}vrabote{% elif ticket.status == 'завершена' %}zavershena{% endif %}">
-                            {% if ticket.status == 'новая' %}Новая{% elif ticket.status == 'в работе' %}В работе{% elif ticket.status == 'завершена' %}Завершена{% else %}{{ ticket.status }}{% endif %}
-                        </span>
-                    </div>
-                    <div class="mobile-ticket-main">
-                        <div class="mobile-ticket-subject">{{ ticket.subject }}</div>
-                        <div class="mobile-ticket-meta">
-                            <span><b>От:</b> {{ ticket.sender | decode_mime }}</span>
-                            <span><b>Дата:</b> {{ ticket.created_at }}</span>
-                            <span><b>Ответственный:</b> {{ ticket.assigned_username or "-" }}</span>
-                        </div>
+                </div>
+                <div class="mobile-ticket-main">
+                    <div class="mobile-ticket-subject">{{ ticket.subject }}</div>
+                    <div class="mobile-ticket-meta">
+                        <span>{{ ticket.sender|decode_mime }}</span>
+                        <span>{{ ticket.created_at }}</span>
+                        <span>{{ ticket.assigned_username or '-' }}</span>
                     </div>
                 </div>
+            </div>
             {% endfor %}
         </div>
-
         <!-- Десктопная таблица -->
         <form method="POST" action="{{ url_for('delete_selected_tickets') }}">
             <div class="table-responsive">
-                <table class="table table-hover align-middle table-tickets mb-0">
+                <table class="table table-tickets align-middle mb-0">
                     <thead>
                         <tr>
                             {% if session["role"] != "client" %}
-                            <th style="width:38px;">
+                            <th class="checkbox-col">
                                 <input type="checkbox" id="select-all" class="form-check-input"
                                     onclick="toggleAll(this)">
                             </th>
                             {% endif %}
-                            <th class="sortable-column" style="width: 100px;">
-                                <a href="{{ url_for('dashboard', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Номер</span>
+                            <th class="sortable-column number-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    №
                                     <span class="sort-arrow">
                                         {% if sort_by == 'id' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
-                            <th class="sortable-column" style="width: 150px;">
-                                <a href="{{ url_for('dashboard', sort_by='sender', sort_order='asc' if sort_by != 'sender' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Отправитель</span>
+                            <th class="sortable-column sender-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='sender', sort_order='asc' if sort_by != 'sender' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    Отправитель
                                     <span class="sort-arrow">
                                         {% if sort_by == 'sender' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
-                            <th class="sortable-column" style="width: 250px;">
-                                <a href="{{ url_for('dashboard', sort_by='subject', sort_order='asc' if sort_by != 'subject' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Тема</span>
+                            <th class="sortable-column subject-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='subject', sort_order='asc' if sort_by != 'subject' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    Тема
                                     <span class="sort-arrow">
                                         {% if sort_by == 'subject' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
-                            <th class="sortable-column" style="width: 150px;">
-                                <a href="{{ url_for('dashboard', sort_by='created_at', sort_order='asc' if sort_by != 'created_at' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Дата</span>
+                            <th class="sortable-column date-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='created_at', sort_order='asc' if sort_by != 'created_at' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    Дата
                                     <span class="sort-arrow">
                                         {% if sort_by == 'created_at' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
-                            <th class="sortable-column" style="width: 100px;">
-                                <a href="{{ url_for('dashboard', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Статус</span>
+                            <th class="sortable-column status-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    Статус
                                     <span class="sort-arrow">
                                         {% if sort_by == 'status' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
-                            <th class="sortable-column" style="width: 150px;">
-                                <a href="{{ url_for('dashboard', sort_by='assigned_username', sort_order='asc' if sort_by != 'assigned_username' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}"
-                                    class="text-dark text-decoration-none d-flex align-items-center justify-content-between">
-                                    <span>Ответственный</span>
+                            <th class="sortable-column assigned-col">
+                                <a
+                                    href="{{ url_for('dashboard', sort_by='assigned_username', sort_order='asc' if sort_by != 'assigned_username' or sort_order == 'desc' else 'desc', status_filter=status_filter, per_page=per_page, page=page) }}">
+                                    <span title="Ответственный">Исп.</span>
                                     <span class="sort-arrow">
                                         {% if sort_by == 'assigned_username' %}
                                         {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                                        {% else %}&nbsp;{% endif %}
+                                        {% endif %}
                                     </span>
                                 </a>
                             </th>
@@ -341,16 +419,19 @@
                         <tr class="ticket-row"
                             onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
                             {% if session["role"] != "client" %}
-                            <td data-label="Выбор">
+                            <td class="checkbox-col">
                                 <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}"
-                                    class="form-check-input" onchange="highlightRow(this); event.stopPropagation();">
+                                    class="form-check-input" onchange="highlightRow(this); event.stopPropagation();"
+                                    onclick="event.stopPropagation();">
                             </td>
                             {% endif %}
-                            <td data-label="Номер">{{ ticket.id }}</td>
-                            <td data-label="Отправитель">{{ ticket.sender | decode_mime }}</td>
-                            <td data-label="Тема">{{ ticket.subject }}</td>
-                            <td data-label="Дата">{{ ticket.created_at }}</td>
-                            <td data-label="Статус">
+                            <td class="number-col">{{ ticket.id }}</td>
+                            <td class="sender-col">{{ ticket.sender | decode_mime }}</td>
+                            <td class="subject-col">{{ ticket.subject }}</td>
+                            <td class="date-col">
+                                {{ ticket.created_at|dt }}
+                            </td>
+                            <td class="status-col">
                                 {% if ticket.status == 'новая' %}
                                 <span class="ticket-status-badge novaya">Новая</span>
                                 {% elif ticket.status == 'в работе' %}
@@ -361,7 +442,9 @@
                                 <span class="ticket-status-badge">{{ ticket.status }}</span>
                                 {% endif %}
                             </td>
-                            <td data-label="Ответственный">{{ ticket.assigned_username }}</td>
+                            <td class="assigned-col">
+                                {{ ticket.assigned_username or '-' }}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -376,7 +459,6 @@
                 {% endif %}
             </div>
         </form>
-
         <nav aria-label="Пагинация" class="mt-3">
             <ul class="pagination flex-wrap justify-content-center">
                 <li class="page-item {% if page == 1 %}disabled{% endif %}">
@@ -386,7 +468,8 @@
                 {% for p in range(1, total_pages + 1) %}
                 <li class="page-item {% if p == page %}active{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('dashboard', page=p, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">{{ p }}</a>
+                        href="{{ url_for('dashboard', page=p, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">{{
+                        p }}</a>
                 </li>
                 {% endfor %}
                 <li class="page-item {% if page == total_pages %}disabled{% endif %}">
@@ -395,7 +478,6 @@
                 </li>
             </ul>
         </nav>
-
         <form method="get" class="mt-3 d-flex justify-content-center align-items-center flex-wrap gap-2">
             <label class="me-2">Заявок на странице:</label>
             <select name="per_page" class="form-select w-auto" onchange="this.form.submit()">
@@ -411,25 +493,25 @@
 </div>
 
 <script>
-function toggleAll(source) {
-    const checkboxes = document.getElementsByName('ticket_ids');
-    for (let i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = source.checked;
-        highlightRow(checkboxes[i]);
+    function toggleAll(source) {
+        const checkboxes = document.getElementsByName('ticket_ids');
+        for (let i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = source.checked;
+            highlightRow(checkboxes[i]);
+        }
     }
-}
-function highlightRow(checkbox) {
-    const row = checkbox.closest('tr');
-    if (checkbox.checked) {
-        row.classList.add('selected');
-    } else {
-        row.classList.remove('selected');
+    function highlightRow(checkbox) {
+        const row = checkbox.closest('tr');
+        if (checkbox.checked) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
     }
-}
-window.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('input[name="ticket_ids"]').forEach(function (cb) {
-        highlightRow(cb);
+    window.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('input[name="ticket_ids"]').forEach(function (cb) {
+            highlightRow(cb);
+        });
     });
-});
 </script>
 {% endblock %}

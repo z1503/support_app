@@ -285,6 +285,18 @@ def dashboard():
     resp.set_cookie('per_page', str(per_page), max_age=60*60*24*30)  # Сохраняем на 30 дней
     return resp
 
+@app.template_filter('dt')
+def dt(value):
+    # Если value уже datetime
+    if hasattr(value, 'strftime'):
+        return value.strftime('%d.%m.%Y %H:%M')
+    # Если value строка типа '2025-05-15 14:20:00'
+    try:
+        dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        return dt.strftime('%d.%m.%Y %H:%M')
+    except Exception:
+        return value
+    
 @app.route("/create", methods=["GET", "POST"])
 @login_required
 def create():

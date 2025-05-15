@@ -4,175 +4,229 @@
 
 {% block content %}
 <style>
-.ticket-main-card {
-    max-width: 700px;
-    margin: 0 auto;
-    border-radius: 2rem;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
-    background: #fff;
-    padding: 2.5rem 2rem 2rem 2rem;
-    min-height: 60vh;
-    display: flex;
-    flex-direction: column;
-    gap: 2.2rem;
-}
-@media (max-width: 767px) {
     .ticket-main-card {
-        padding: 1rem 0.4rem;
-        border-radius: 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        gap: 1.2rem;
-    }
-    .ticket-title-row h2 {
-        font-size: 1.15rem;
-    }
-    .ticket-status-badge {
-        font-size: 0.98rem;
-        padding: 0.4em 1em;
-    }
-    .ticket-details-row {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
         flex-direction: column;
-        gap: 0.7rem;
+        gap: 2.5rem;
     }
+
+    @media (max-width: 767px) {
+        .ticket-main-card {
+            padding: 1rem 0.4rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            gap: 1.2rem;
+        }
+
+        .ticket-title-row h2 {
+            font-size: 1.15rem;
+        }
+
+        .ticket-status-badge {
+            font-size: 0.98rem;
+            padding: 0.4em 1em;
+        }
+
+        .ticket-details-row {
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .ticket-details-col {
+            min-width: 0;
+            font-size: 1em;
+        }
+
+        .ticket-details-label {
+            font-size: 0.97em;
+            margin-bottom: 0.12rem;
+        }
+
+        .ticket-details-value {
+            font-size: 1.05em;
+            margin-bottom: 0.7rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+
+        .ticket-description-block {
+            padding: 1em 0.7em;
+            border-radius: 0.7em;
+            font-size: 0.98em;
+            min-height: 50px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+
+        .ticket-attachments-block {
+            gap: 0.5rem;
+        }
+
+        .ticket-attachment-card {
+            font-size: 0.97em;
+            padding: 0.5em 0.7em;
+            border-radius: 0.5em;
+            word-break: break-all;
+        }
+
+        .ticket-form-block {
+            padding: 1em 0.5em;
+            border-radius: 0.7em;
+            margin-top: 1em;
+        }
+
+        .ticket-btn-secondary {
+            font-size: 1em;
+            padding: 0.5rem 0;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    }
+
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .ticket-title-row h2 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        word-break: break-all;
+    }
+
+    .ticket-status-badge {
+        font-size: 1.15rem;
+        padding: 0.6em 1.4em;
+        border-radius: 2em;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        display: inline-block;
+    }
+
+    .ticket-status-badge.bg-success {
+        background: #e7fbe7 !important;
+        color: #198754 !important;
+    }
+
+    .ticket-status-badge.bg-warning {
+        background: #fffbe7 !important;
+        color: #b8860b !important;
+    }
+
+    .ticket-status-badge.bg-secondary {
+        background: #f1f1f1 !important;
+        color: #555 !important;
+    }
+
+    .ticket-status-badge.bg-light {
+        background: #f8f9fa !important;
+        color: #222 !important;
+    }
+
+    .ticket-details-row {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
     .ticket-details-col {
-        min-width: 0;
-        font-size: 1em;
+        flex: 1 1 260px;
+        min-width: 220px;
     }
+
     .ticket-details-label {
-        font-size: 0.97em;
-        margin-bottom: 0.12rem;
+        color: #888;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
     }
+
     .ticket-details-value {
-        font-size: 1.05em;
-        margin-bottom: 0.7rem;
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: #222;
+        margin-bottom: 1.2rem;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
     }
+
     .ticket-description-block {
-        padding: 1em 0.7em;
-        border-radius: 0.7em;
-        font-size: 0.98em;
-        min-height: 50px;
+        background: #f8f9fa;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        min-height: 80px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
     }
+
     .ticket-attachments-block {
-        gap: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
     }
+
     .ticket-attachment-card {
-        font-size: 0.97em;
-        padding: 0.5em 0.7em;
-        border-radius: 0.5em;
+        display: flex;
+        align-items: center;
+        gap: 0.7em;
+        background: #f3f6fa;
+        border-radius: 0.8em;
+        padding: 0.7em 1.2em;
+        font-size: 1.05rem;
+        color: #0d6efd;
+        text-decoration: none;
+        transition: background 0.15s;
+        border: 1px solid #e0e7ef;
+        word-break: break-all;
     }
+
+    .ticket-attachment-card:hover {
+        background: #e9f1ff;
+        color: #084298;
+        text-decoration: underline;
+    }
+
     .ticket-form-block {
-        padding: 1em 0.5em;
-        border-radius: 0.7em;
-        margin-top: 1em;
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
     }
+
+    .ticket-btn-main {
+        font-size: 1.25rem;
+        padding: 0.9rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
     .ticket-btn-secondary {
-        font-size: 1em;
-        padding: 0.5rem 0;
-        border-radius: 0.5rem;
-        margin-top: 0.5rem;
+        font-size: 1.1rem;
+        padding: 0.7rem 0;
+        border-radius: 0.7rem;
+        font-weight: 500;
+        margin-top: 0.7rem;
     }
-}
-.ticket-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-.ticket-title-row h2 {
-    font-size: 2.1rem;
-    font-weight: 700;
-    margin-bottom: 0;
-    word-break: break-all;
-}
-.ticket-status-badge {
-    font-size: 1.15rem;
-    padding: 0.6em 1.4em;
-    border-radius: 2em;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    display: inline-block;
-}
-.ticket-status-badge.bg-success { background: #e7fbe7 !important; color: #198754 !important; }
-.ticket-status-badge.bg-warning { background: #fffbe7 !important; color: #b8860b !important; }
-.ticket-status-badge.bg-secondary { background: #f1f1f1 !important; color: #555 !important; }
-.ticket-status-badge.bg-light { background: #f8f9fa !important; color: #222 !important; }
-.ticket-details-row {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-.ticket-details-col {
-    flex: 1 1 260px;
-    min-width: 220px;
-}
-.ticket-details-label {
-    color: #888;
-    font-size: 1rem;
-    margin-bottom: 0.2rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-}
-.ticket-details-value {
-    font-size: 1.15rem;
-    font-weight: 500;
-    color: #222;
-    margin-bottom: 1.2rem;
-    word-break: break-all;
-}
-.ticket-description-block {
-    background: #f8f9fa;
-    border-radius: 1.2rem;
-    padding: 1.5rem 1.2rem;
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-    min-height: 80px;
-}
-.ticket-attachments-block {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-}
-.ticket-attachment-card {
-    display: flex;
-    align-items: center;
-    gap: 0.7em;
-    background: #f3f6fa;
-    border-radius: 0.8em;
-    padding: 0.7em 1.2em;
-    font-size: 1.05rem;
-    color: #0d6efd;
-    text-decoration: none;
-    transition: background 0.15s;
-    border: 1px solid #e0e7ef;
-    word-break: break-all;
-}
-.ticket-attachment-card:hover {
-    background: #e9f1ff;
-    color: #084298;
-    text-decoration: underline;
-}
-.ticket-form-block {
-    background: #f8fafd;
-    border-radius: 1.2rem;
-    padding: 1.5rem 1.2rem;
-    margin-top: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-}
-.ticket-btn-main {
-    font-size: 1.25rem;
-    padding: 0.9rem 0;
-    border-radius: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-.ticket-btn-secondary {
-    font-size: 1.1rem;
-    padding: 0.7rem 0;
-    border-radius: 0.7rem;
-    font-weight: 500;
-    margin-top: 0.7rem;
-}
 </style>
 
 <div class="ticket-main-card">
@@ -241,7 +295,8 @@
                     <select name="status" class="form-select form-select-sm" required>
                         <option value="новая" {% if ticket.status=='новая' %}selected{% endif %}>Новая</option>
                         <option value="в работе" {% if ticket.status=='в работе' %}selected{% endif %}>В работе</option>
-                        <option value="завершена" {% if ticket.status=='завершена' %}selected{% endif %}>Завершена</option>
+                        <option value="завершена" {% if ticket.status=='завершена' %}selected{% endif %}>Завершена
+                        </option>
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -264,6 +319,7 @@
         </form>
     </div>
     {% endif %}
+
     <!-- Кнопка назад -->
     <a class="btn btn-outline-secondary ticket-btn-secondary w-100" href="{{ url_for('dashboard') }}">
         <i class="bi bi-arrow-left"></i> Назад к списку заявок
