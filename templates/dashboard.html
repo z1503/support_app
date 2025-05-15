@@ -4,30 +4,8 @@
 
 {% block content %}
 <style>
-.ticket-main-card {
-    max-width: 1200px;
-    margin: 0 auto;
-    border-radius: 2rem;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
-    background: #fff;
-    padding: 2.5rem 2rem 2rem 2rem;
-    min-height: 70vh;
-    display: flex;
-    flex-direction: column;
-    gap: 2.5rem;
-}
+/* --- Мобильные карточки --- */
 @media (max-width: 767px) {
-    .ticket-main-card {
-        padding: 0.6rem 0.2rem;
-        border-radius: 0.6rem;
-    }
-    .ticket-form-block {
-        padding: 0.7rem 0.3rem;
-        border-radius: 0.4rem;
-    }
-    .table-tickets, .table-tickets thead, .table-tickets tbody, .table-tickets th, .table-tickets tr {
-        display: none !important;
-    }
     .mobile-tickets-list {
         display: flex;
         flex-direction: column;
@@ -74,7 +52,6 @@
         color: #0d6efd;
         letter-spacing: 0.03em;
         margin-left: {% if session["role"] != "client" %}2.2em{% else %}0{% endif %};
-        /* чтобы номер не наезжал на чекбокс */
     }
     .mobile-ticket-status {
         font-size: 0.95em;
@@ -130,52 +107,12 @@
         background: #d6e4ff;
     }
 }
-.mobile-sort-form {
-    display: none;
-}
-@media (max-width: 767px) {
-    .mobile-sort-form {
-        display: block !important;
+@media (min-width: 768px) {
+    .mobile-tickets-list {
+        display: none !important;
     }
 }
-.ticket-title-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.ticket-title-row h2 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin-bottom: 0;
-}
-.ticket-form-block {
-    background: #f8fafd;
-    border-radius: 1.2rem;
-    padding: 1.5rem 1.2rem;
-    margin-top: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-}
-.ticket-status-badge.novaya {
-    background: #e7fbe7;
-    color: #198754;
-}
-.ticket-status-badge.vrabote {
-    background: #fffbe7;
-    color: #b8860b;
-}
-.ticket-status-badge.zavershena {
-    background: #f1f1f1;
-    color: #555;
-}
-.ticket-status-badge {
-    border-radius: 1em;
-    padding: 0.4em 1em;
-    font-size: 1em;
-    font-weight: 500;
-    display: inline-block;
-    min-width: 80px;
-    text-align: center;
-}
+/* --- Таблица для десктопа --- */
 .table-tickets tr.selected,
 .table-tickets tr.selected:hover {
     background: #e9f5ff !important;
@@ -210,6 +147,18 @@
     height: 1.3em;
     margin-top: 0;
 }
+.ticket-status-badge.novaya { background: #e7fbe7; color: #198754; }
+.ticket-status-badge.vrabote { background: #fffbe7; color: #b8860b; }
+.ticket-status-badge.zavershena { background: #f1f1f1; color: #555; }
+.ticket-status-badge {
+    border-radius: 1em;
+    padding: 0.4em 1em;
+    font-size: 1em;
+    font-weight: 500;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
 .sortable-column a {
     user-select: none;
 }
@@ -225,28 +174,6 @@
     </div>
 
     <div class="ticket-form-block">
-
-        <!-- Мобильная сортировка -->
-        <form method="get" class="mb-3 mobile-sort-form">
-            <div class="input-group">
-                <label class="input-group-text" for="sort_by">Сортировка:</label>
-                <select name="sort_by" id="sort_by" class="form-select" onchange="this.form.submit()">
-                    <option value="id" {% if sort_by == 'id' %}selected{% endif %}>Номер</option>
-                    <option value="sender" {% if sort_by == 'sender' %}selected{% endif %}>Отправитель</option>
-                    <option value="subject" {% if sort_by == 'subject' %}selected{% endif %}>Тема</option>
-                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Дата</option>
-                    <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Статус</option>
-                    <option value="assigned_username" {% if sort_by == 'assigned_username' %}selected{% endif %}>Ответственный</option>
-                </select>
-                <button class="btn btn-outline-secondary" type="submit" name="sort_order" value="{% if sort_order == 'asc' %}desc{% else %}asc{% endif %}">
-                    {% if sort_order == 'asc' %}▼{% else %}▲{% endif %}
-                </button>
-            </div>
-            <input type="hidden" name="status_filter" value="{{ status_filter }}">
-            <input type="hidden" name="per_page" value="{{ per_page }}">
-            <input type="hidden" name="page" value="{{ page }}">
-        </form>
-
         <!-- Форма фильтрации -->
         <form method="get" class="row g-2 mb-3">
             <div class="col-auto">
@@ -264,8 +191,8 @@
 
         {% if tickets %}
         <!-- Мобильные карточки -->
-        <div class="mobile-tickets-list">
-            {% for ticket in tickets|sort(attribute='status') %}
+        <div class="mobile-tickets-list d-md-none">
+            {% for ticket in tickets %}
                 <div class="mobile-ticket-card" tabindex="0" onclick="window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">
                     {% if session["role"] != "client" %}
                     <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}" class="form-check-input mobile-ticket-checkbox" onclick="event.stopPropagation();">
@@ -286,7 +213,6 @@
                         </div>
                     </div>
                     <div class="mobile-ticket-footer">
-                        <button class="mobile-ticket-btn" onclick="event.stopPropagation(); window.location.href='{{ url_for('ticket', ticket_id=ticket.id) }}'">Подробнее</button>
                     </div>
                 </div>
             {% endfor %}
@@ -294,7 +220,7 @@
 
         <!-- Десктопная таблица -->
         <form method="POST" action="{{ url_for('delete_selected_tickets') }}">
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-hover align-middle table-tickets mb-0">
                     <thead>
                         <tr>
@@ -404,39 +330,13 @@
                 </table>
             </div>
             <div class="mt-3" style="max-width: 220px;">
+                {% if session["role"] != "client" %}
                 <button type="submit" class="btn btn-danger w-100"
                     onclick="return confirm('Удалить выбранные заявки?')">
                     <i class="bi bi-trash"></i> Удалить выбранные
                 </button>
+                {% endif %}
             </div>
-        </form>
-
-        <nav aria-label="Пагинация" class="mt-3">
-            <ul class="pagination flex-wrap justify-content-center">
-                <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                    <a class="page-link"
-                        href="{{ url_for('dashboard', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">‹</a>
-                </li>
-                {% for p in range(1, total_pages + 1) %}
-                <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link"
-                        href="{{ url_for('dashboard', page=p, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">{{ p }}</a>
-                </li>
-                {% endfor %}
-                <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-                    <a class="page-link"
-                        href="{{ url_for('dashboard', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, status_filter=status_filter) }}">›</a>
-                </li>
-            </ul>
-        </nav>
-
-        <form method="get" class="mt-3 d-flex justify-content-center align-items-center flex-wrap gap-2">
-            <label class="me-2">Заявок на странице:</label>
-            <select name="per_page" class="form-select w-auto" onchange="this.form.submit()">
-                <option value="20" {% if per_page==20 %}selected{% endif %}>20</option>
-                <option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
-                <option value="100" {% if per_page==100 %}selected{% endif %}>100</option>
-            </select>
         </form>
         {% else %}
         <p class="text-muted">Заявок пока нет.</p>
