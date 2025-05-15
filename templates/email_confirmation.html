@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Подтверждение email</title>
+  <title>Регистрация завершена</title>
   <style>
     body {
       background: #f8fafc;
@@ -32,23 +32,6 @@
       margin-bottom: 2rem;
       line-height: 1.6;
     }
-    .email-btn {
-      display: inline-block;
-      margin-top: 14px;
-      padding: 0.9em 2.2em;
-      background: #0d6efd;
-      color: #fff !important;
-      text-decoration: none;
-      border-radius: 0.8em;
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
-      transition: background 0.18s;
-    }
-    .email-btn:hover {
-      background: #0b5ed7;
-    }
     .email-footer {
       color: #888;
       font-size: 0.96rem;
@@ -63,14 +46,13 @@
 </head>
 <body>
   <div class="email-card">
-    <div class="email-title">Подтверждение регистрации</div>
+    <div class="email-title">Регистрация успешно завершена</div>
     <div class="email-message">
       Здравствуйте, <b>{{ username }}</b>!<br>
       <br>
-      Спасибо за регистрацию.<br>
-      Пожалуйста, подтвердите ваш адрес электронной почты, нажав на кнопку ниже:
+      Спасибо за регистрацию в нашей системе.<br>
+      Теперь вы можете войти в личный кабинет, используя свои данные.
     </div>
-    <a href="{{ confirm_url }}" class="email-btn">Подтвердить email</a>
     <div class="email-footer">
       Если вы не регистрировались, просто проигнорируйте это письмо.<br><br>
       С уважением,<br>

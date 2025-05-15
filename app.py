@@ -206,8 +206,9 @@ def register():
                          (username, email, hashed_password, "client"))
             conn.commit()
             conn.close()
-
-            flash("Регистрация прошла успешно!", "success")
+            
+            send_confirmation_email(email, username)
+            flash("Регистрация прошла успешно! На почту отправлено письмо с уведомлением.", "success")
             return redirect("/login")
 
         except Exception as e:
