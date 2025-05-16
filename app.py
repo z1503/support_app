@@ -118,52 +118,61 @@ def allowed_file(filename):
 
 # Функция отправки письма с уведомлением о создании заявки 
 def send_ticket_created_email(user_email, username, ticket_id, subject, status, ticket_url):
-    msg = Message(
-        subject=f"Ваша заявка №{ticket_id} создана",
-        recipients=[user_email]
-    )
-    msg.html = render_template(
-        "email/ticket_created.html",
-        username=username,
-        ticket_id=ticket_id,
-        subject=subject,
-        status=status,
-        ticket_url=ticket_url
-    )
-    mail.send(msg)
+    try:
+        msg = Message(
+            subject=f"Ваша заявка №{ticket_id} создана",
+            recipients=[user_email]
+        )
+        msg.html = render_template(
+            "email/ticket_created.html",
+            username=username,
+            ticket_id=ticket_id,
+            subject=subject,
+            status=status,
+            ticket_url=ticket_url
+        )
+        mail.send(msg)
+    except Exception as e:
+        app.logger.warning(f"Ошибка отправки письма о создании заявки на {user_email}: {e}")
 
 # Функция отправки письма с уведомлением об изменении статуса 
 def send_status_update_email(user_email, username, ticket_id, new_status, ticket_url, subject):
-    msg = Message(
-        subject=f"Изменение статуса заявки №{ticket_id}",
-        recipients=[user_email]
-    )
-    msg.html = render_template(
-        "email/status_update.html",
-        username=username,
-        ticket_id=ticket_id,
-        new_status=new_status,
-        ticket_url=ticket_url,
-        subject=subject
-    )
-    mail.send(msg)
-    
-#Отправка письма неавторизованному пользователю
+    try:
+        msg = Message(
+            subject=f"Изменение статуса заявки №{ticket_id}",
+            recipients=[user_email]
+        )
+        msg.html = render_template(
+            "email/status_update.html",
+            username=username,
+            ticket_id=ticket_id,
+            new_status=new_status,
+            ticket_url=ticket_url,
+            subject=subject
+        )
+        mail.send(msg)
+    except Exception as e:
+        app.logger.warning(f"Ошибка отправки письма об изменении статуса на {user_email}: {e}")
+
+# Отправка письма неавторизованному пользователю
 def send_public_ticket_email(recipient_email, ticket_id, subject, status, ticket_url):
-    msg = Message(
-        subject=f"Ваша заявка №{ticket_id} создана",
-        recipients=[recipient_email]
-    )
-    msg.html = render_template(
-        "email/ticket_created.html",
-        username=recipient_email,  # если нет имени, используем email
-        ticket_id=ticket_id,
-        subject=subject,
-        status=status,
-        ticket_url=ticket_url
-    )
-    mail.send(msg)
-    
+    try:
+        msg = Message(
+            subject=f"Ваша заявка №{ticket_id} создана",
+            recipients=[recipient_email]
+        )
+        msg.html = render_template(
+            "email/ticket_created.html",
+            username=recipient_email,  # если нет имени, используем email
+            ticket_id=ticket_id,
+            subject=subject,
+            status=status,
+            ticket_url=ticket_url
+        )
+        mail.send(msg)
+    except Exception as e:
+        app.logger.warning(f"Ошибка отправки письма неавторизованному пользователю на {recipient_email}: {e}")
+
 # Функция отправки письма с подтверждением
 def send_confirmation_email(email, username="Пользователь"):
     try:
@@ -172,21 +181,17 @@ def send_confirmation_email(email, username="Пользователь"):
         msg["From"] = os.getenv("EMAIL_FROM")
         msg["To"] = email
 
-        # Используем переменную окружения для домена
-        domain_name = os.getenv("DOMAIN_NAME", "127.0.0.1:5000")  # если переменная не задана, по умолчанию localhost
-
+        domain_name = os.getenv("DOMAIN_NAME", "127.0.0.1:5000")
         confirm_url = f"http://{domain_name}/confirm?email={email}"
 
         html = render_template("email_confirmation.html", username=username, confirm_url=confirm_url)
         msg.attach(MIMEText(html, "html"))
 
-        # Используем переменные окружения для данных почтового ящика
         with smtplib.SMTP_SSL("smtp.mail.ru", 465) as server:
             server.login(os.getenv("EMAIL_FROM"), os.getenv("EMAIL_PASSWORD"))
             server.send_message(msg)
-
     except Exception as e:
-        app.logger.error(f"Email sending failed: {e}")
+        app.logger.warning(f"Ошибка отправки письма-подтверждения на {email}: {e}")
 
 @app.route("/")
 def index():
@@ -340,15 +345,15 @@ def dashboard():
 
 @app.template_filter('dt')
 def dt(value):
-    # Если value уже datetime
+    from datetime import datetime
     if hasattr(value, 'strftime'):
         return value.strftime('%d.%m.%Y %H:%M')
-    # Если value строка типа '2025-05-15 14:20:00'
     try:
         dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
         return dt.strftime('%d.%m.%Y %H:%M')
     except Exception:
         return value
+
     
 @app.route("/create", methods=["GET", "POST"])
 @login_required
@@ -432,8 +437,8 @@ def ticket(ticket_id):
         ticket_dict = dict(ticket)
         ticket_dict["sender"] = decode_sender(ticket_dict["sender"])
         ticket_dict["subject"] = decode_sender(ticket_dict["subject"])
-        ticket_dict["created_at"] = datetime.strptime(ticket_dict["created_at"], "%Y-%m-%d %H:%M:%S")
-        ticket_dict["created_at_display"] = ticket_dict["created_at"].strftime("%d-%m-%Y %H:%M:%S")
+        # Оставляем created_at как строку!
+        # ticket_dict["created_at"] = ticket_dict["created_at"]
 
         if request.method == "POST":
             status = request.form.get("status")
@@ -463,7 +468,7 @@ def ticket(ticket_id):
                         ticket_id,
                         status,
                         ticket_url,
-                        ticket_dict["subject"]  # <-- добавили заголовок!
+                        ticket_dict["subject"]
                     )
 
             flash("Заявка обновлена.", "success")
