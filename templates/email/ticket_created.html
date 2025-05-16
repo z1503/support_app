@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Заявка создана</title>
+  <style>
+    body { background: #f8fafc; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    .email-card { max-width: 420px; margin: 40px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.08); padding: 2.2rem 1.7rem 2rem 1.7rem; text-align: center; }
+    .email-title { font-size: 1.4rem; font-weight: 700; color: #0d6efd; margin-bottom: 1.1rem; letter-spacing: 0.03em; }
+    .email-message { color: #444; font-size: 1.08rem; margin-bottom: 2rem; line-height: 1.6; }
+    .ticket-info { background: #f1f6fb; border-radius: 0.7rem; padding: 1rem; margin: 1.2rem 0; text-align: left; font-size: 1.02rem; color: #222; }
+    .ticket-info strong { color: #0d6efd; font-weight: 600; }
+    .ticket-link { display: inline-block; margin-top: 1.2rem; padding: 0.6rem 1.1rem; background: #0d6efd; color: #fff !important; border-radius: 0.7rem; text-decoration: none; font-weight: 600; font-size: 1.05rem; transition: background 0.16s; }
+    .ticket-link:hover { background: #0b5ed7; }
+    .email-footer { color: #888; font-size: 0.96rem; margin-top: 2.3rem; line-height: 1.5; }
+    @media (max-width: 600px) {
+      .email-card { padding: 1.2rem 0.5rem; border-radius: 1rem; }
+      .email-title { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-card">
+    <div class="email-title">Ваша заявка успешно создана</div>
+    <div class="email-message">
+      Здравствуйте, <b>{{ username }}</b>!<br>
+      Ваша заявка была успешно создана.<br>
+      <div class="ticket-info">
+        <div><strong>№ заявки:</strong> {{ ticket_id }}</div>
+        <div><strong>Тема:</strong> {{ subject }}</div>
+        <div><strong>Статус:</strong> <span style="color:#0d6efd">{{ status }}</span></div>
+      </div>
+      {% if ticket_url %}
+      <a class="ticket-link" href="{{ ticket_url }}">Открыть заявку</a>
+      {% endif %}
+    </div>
+    <div class="email-footer">
+      Если вы не создавали эту заявку, просто проигнорируйте это письмо.<br><br>
+      С уважением,<br>
+      Команда поддержки
+    </div>
+  </div>
+</body>
+</html>

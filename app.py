@@ -112,6 +112,54 @@ def decode_sender(encoded_sender):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Функция отправки письма с уведомлением о создании заявки 
+def send_ticket_created_email(user_email, username, ticket_id, subject, status, ticket_url):
+    msg = Message(
+        subject=f"Ваша заявка №{ticket_id} создана",
+        recipients=[user_email]
+    )
+    msg.html = render_template(
+        "email/ticket_created.html",
+        username=username,
+        ticket_id=ticket_id,
+        subject=subject,
+        status=status,
+        ticket_url=ticket_url
+    )
+    mail.send(msg)
+
+# Функция отправки письма с уведомлением
+def send_status_update_email(user_email, username, ticket_id, new_status, ticket_url, subject):
+    msg = Message(
+        subject=f"Изменение статуса заявки №{ticket_id}",
+        recipients=[user_email]
+    )
+    msg.html = render_template(
+        "email/status_update.html",
+        username=username,
+        ticket_id=ticket_id,
+        new_status=new_status,
+        ticket_url=ticket_url,
+        subject=subject
+    )
+    mail.send(msg)
+    
+#Отправка письма неавторизованному пользователю
+def send_public_ticket_email(recipient_email, ticket_id, subject, status, ticket_url):
+    msg = Message(
+        subject=f"Ваша заявка №{ticket_id} создана",
+        recipients=[recipient_email]
+    )
+    msg.html = render_template(
+        "email/ticket_created.html",
+        username=recipient_email,  # если нет имени, используем email
+        ticket_id=ticket_id,
+        subject=subject,
+        status=status,
+        ticket_url=ticket_url
+    )
+    mail.send(msg)
+    
 # Функция отправки письма с подтверждением
 def send_confirmation_email(email, username="Пользователь"):
     try:
@@ -333,14 +381,30 @@ def create():
         # Преобразуем список файлов в строку, разделённую запятой
         attachment_str = ",".join(attachment) if attachment else None
 
-        # Сохранение заявки в базу данных
+        # Сохранение заявки в базу данных и получение ticket_id
         conn = get_db_connection()
-        conn.execute(
+        cursor = conn.execute(
             "INSERT INTO tickets (sender, subject, body, status, user_id, created_at, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (sender, subject, body, status, user_id, created_at, attachment_str)
         )
+        ticket_id = cursor.lastrowid  # Получаем ID новой заявки
         conn.commit()
+
+        # Получаем email и имя пользователя
+        user = conn.execute("SELECT username, email FROM users WHERE id = ?", (user_id,)).fetchone()
         conn.close()
+
+        if user:
+            domain = request.host_url.rstrip('/')
+            ticket_url = f"{domain}/ticket/{ticket_id}"
+            send_ticket_created_email(
+                user["email"],
+                user["username"],
+                ticket_id,
+                subject,
+                status,
+                ticket_url
+            )
 
         flash("Заявка успешно создана", "success")
         return redirect(url_for("dashboard"))
@@ -351,47 +415,55 @@ def create():
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
 @login_required
 def ticket(ticket_id):
-    # Используем контекстный менеджер для работы с БД
     with get_db_connection() as conn:
         ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-
-        # Если заявка не найдена
         if ticket is None:
             flash("Заявка не найдена.", "error")
             return redirect(url_for('dashboard'))
 
         users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
-
-        # Преобразуем ticket в обычный словарь, чтобы можно было модифицировать
         ticket_dict = dict(ticket)
-
-        # Декодируем данные, если нужно (например, заголовки письма)
         ticket_dict["sender"] = decode_sender(ticket_dict["sender"])
         ticket_dict["subject"] = decode_sender(ticket_dict["subject"])
-
-        # Преобразуем строку в datetime объект для правильного отображения
         ticket_dict["created_at"] = datetime.strptime(ticket_dict["created_at"], "%Y-%m-%d %H:%M:%S")
-
-        # Если необходимо, форматируем дату в более удобочитаемый вид
         ticket_dict["created_at_display"] = ticket_dict["created_at"].strftime("%d-%m-%Y %H:%M:%S")
 
-        # Обработка изменения статуса и назначения ответственного
         if request.method == "POST":
             status = request.form.get("status")
             assigned_to = request.form.get("assigned_to")
+            status_changed = False
 
-            if status:
+            if status and status != ticket_dict["status"]:
                 conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (status, ticket_id))
-            
+                status_changed = True
+
             if assigned_to:
                 conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (assigned_to, ticket_id))
 
             conn.commit()
+
+            if status_changed:
+                user = conn.execute(
+                    "SELECT u.email, u.username FROM users u WHERE u.id = ?",
+                    (ticket_dict["user_id"],)
+                ).fetchone()
+                if user:
+                    domain = request.host_url.rstrip('/')
+                    ticket_url = f"{domain}/ticket/{ticket_id}"
+                    send_status_update_email(
+                        user["email"],
+                        user["username"],
+                        ticket_id,
+                        status,
+                        ticket_url,
+                        ticket_dict["subject"]  # <-- добавили заголовок!
+                    )
+
             flash("Заявка обновлена.", "success")
             return redirect(url_for('ticket', ticket_id=ticket_id))
 
-    # Передаем в шаблон обновленный ticket_dict
     return render_template("ticket.html", ticket=ticket_dict, users=users)
+
 
 @app.route("/logout")
 def logout():
@@ -747,9 +819,7 @@ def create_public_ticket():
                 else:
                     flash("Неподдерживаемый формат файла или MIME-типа. Допустимые форматы: jpg, jpeg, png, pdf, docx, txt", "danger")
                     return redirect(url_for("create_public_ticket"))
-        # --- Конец блока загрузки файлов ---
-
-        # Если вложений несколько, то сохраняем их как строку, разделённую запятой
+        # Преобразуем список файлов в строку, разделённую запятой
         attachment_str = ','.join(attachments) if attachments else None
 
         # Время в часовом поясе Москвы
@@ -766,6 +836,22 @@ def create_public_ticket():
         ticket_id = cursor.lastrowid
         conn.commit()
         conn.close()
+
+        # Формируем ссылку на заявку
+        domain = request.host_url.rstrip('/')
+        ticket_url = f"{domain}/ticket/{ticket_id}"
+
+        # Отправка email-уведомления (с обработкой ошибок)
+        try:
+            send_public_ticket_email(
+                recipient_email=sender,
+                ticket_id=ticket_id,
+                subject=subject,
+                status='новая',
+                ticket_url=ticket_url
+            )
+        except Exception as e:
+            app.logger.warning(f"Ошибка отправки письма на {sender}: {e}")
 
         return redirect(url_for('thank_you', ticket_id=ticket_id))
 

@@ -57,6 +57,13 @@
     <div class="auth-card">
         <div class="auth-title">Создать заявку</div>
 
+        <!-- Уведомление для неавторизованных пользователей -->
+        <div class="alert alert-warning" role="alert" style="font-size: 1.01rem;">
+            Вы создаёте заявку без авторизации.
+            <b>Статус заявки не будет отслеживаться</b> в личном кабинете.
+            Сохраните ссылку из письма для просмотра вашей заявки.
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
