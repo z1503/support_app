@@ -21,6 +21,7 @@ from flask import send_from_directory, Response
 import mimetypes
 import uuid
 import magic
+import secrets
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -49,6 +50,9 @@ app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB лимит
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'docx', 'txt', 'zip'}
 ALLOWED_MIME_TYPES = {'image/jpeg','image/png','application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document',}
+
+#Генерирует уникальный токен при создании заявки
+public_token = secrets.token_urlsafe(32)
 
 # Инициализация Flask-Mail
 mail = Mail(app)
@@ -128,7 +132,7 @@ def send_ticket_created_email(user_email, username, ticket_id, subject, status, 
     )
     mail.send(msg)
 
-# Функция отправки письма с уведомлением
+# Функция отправки письма с уведомлением об изменении статуса 
 def send_status_update_email(user_email, username, ticket_id, new_status, ticket_url, subject):
     msg = Message(
         subject=f"Изменение статуса заявки №{ticket_id}",
@@ -381,11 +385,14 @@ def create():
         # Преобразуем список файлов в строку, разделённую запятой
         attachment_str = ",".join(attachment) if attachment else None
 
+        # === Генерируем уникальный токен ===
+        public_token = secrets.token_urlsafe(32)
+
         # Сохранение заявки в базу данных и получение ticket_id
         conn = get_db_connection()
         cursor = conn.execute(
-            "INSERT INTO tickets (sender, subject, body, status, user_id, created_at, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (sender, subject, body, status, user_id, created_at, attachment_str)
+            "INSERT INTO tickets (sender, subject, body, status, user_id, created_at, attachment, public_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (sender, subject, body, status, user_id, created_at, attachment_str, public_token)
         )
         ticket_id = cursor.lastrowid  # Получаем ID новой заявки
         conn.commit()
@@ -396,7 +403,7 @@ def create():
 
         if user:
             domain = request.host_url.rstrip('/')
-            ticket_url = f"{domain}/ticket/{ticket_id}"
+            ticket_url = f"{domain}/public_ticket/{ticket_id}?token={public_token}"
             send_ticket_created_email(
                 user["email"],
                 user["username"],
@@ -826,20 +833,23 @@ def create_public_ticket():
         moscow_tz = pytz.timezone('Europe/Moscow')
         created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Сохранение заявки в БД
+        # === Генерируем уникальный токен ===
+        public_token = secrets.token_urlsafe(32)
+
+        # Сохраняем заявку в БД с токеном
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO tickets (sender, subject, body, attachment, status, created_at) VALUES (?, ?, ?, ?, 'новая', ?)",
-            (sender, subject, body, attachment_str, created_at)
+            "INSERT INTO tickets (sender, subject, body, attachment, status, created_at, public_token) VALUES (?, ?, ?, ?, 'новая', ?, ?)",
+            (sender, subject, body, attachment_str, created_at, public_token)
         )
         ticket_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
-        # Формируем ссылку на заявку
+        # Формируем публичную ссылку на заявку
         domain = request.host_url.rstrip('/')
-        ticket_url = f"{domain}/ticket/{ticket_id}"
+        ticket_url = f"{domain}/public_ticket/{ticket_id}?token={public_token}"
 
         # Отправка email-уведомления (с обработкой ошибок)
         try:
@@ -856,6 +866,24 @@ def create_public_ticket():
         return redirect(url_for('thank_you', ticket_id=ticket_id))
 
     return render_template("create_public_ticket.html")
+
+@app.route("/public_ticket/<int:ticket_id>")
+def public_ticket(ticket_id):
+    token = request.args.get("token")
+    if not token:
+        return render_template("error.html", message="Токен доступа не указан."), 403
+
+    conn = get_db_connection()
+    ticket = conn.execute(
+        "SELECT * FROM tickets WHERE id = ? AND public_token = ?",
+        (ticket_id, token)
+    ).fetchone()
+    conn.close()
+
+    if not ticket:
+        return render_template("error.html", message="Заявка не найдена или ссылка недействительна."), 404
+
+    return render_template("public_ticket.html", ticket=ticket)
 
 
 @app.route("/thank_you/<int:ticket_id>")

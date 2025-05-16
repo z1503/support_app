@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<style>
+    .ticket-main-card {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    @media (max-width: 767px) {
+        .ticket-main-card {
+            padding: 1rem 0.4rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            gap: 1.2rem;
+        }
+        .ticket-title-row h2 {
+            font-size: 1.15rem;
+        }
+        .ticket-status-badge {
+            font-size: 0.98rem;
+            padding: 0.4em 1em;
+        }
+        .ticket-details-row {
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+        .ticket-details-col {
+            min-width: 0;
+            font-size: 1em;
+        }
+        .ticket-details-label {
+            font-size: 0.97em;
+            margin-bottom: 0.12rem;
+        }
+        .ticket-details-value {
+            font-size: 1.05em;
+            margin-bottom: 0.7rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+        .ticket-description-block {
+            padding: 1em 0.7em;
+            border-radius: 0.7em;
+            font-size: 0.98em;
+            min-height: 50px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+        .ticket-attachments-block {
+            gap: 0.5rem;
+        }
+        .ticket-attachment-card {
+            font-size: 0.97em;
+            padding: 0.5em 0.7em;
+            border-radius: 0.5em;
+            word-break: break-all;
+        }
+    }
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .ticket-title-row h2 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        word-break: break-all;
+    }
+    .ticket-status-badge {
+        font-size: 1.15rem;
+        padding: 0.6em 1.4em;
+        border-radius: 2em;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        display: inline-block;
+    }
+    .ticket-status-badge.bg-success {
+        background: #e7fbe7 !important;
+        color: #198754 !important;
+    }
+    .ticket-status-badge.bg-warning {
+        background: #fffbe7 !important;
+        color: #b8860b !important;
+    }
+    .ticket-status-badge.bg-secondary {
+        background: #f1f1f1 !important;
+        color: #555 !important;
+    }
+    .ticket-status-badge.bg-light {
+        background: #f8f9fa !important;
+        color: #222 !important;
+    }
+    .ticket-details-row {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    .ticket-details-col {
+        flex: 1 1 260px;
+        min-width: 220px;
+    }
+    .ticket-details-label {
+        color: #888;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+    .ticket-details-value {
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: #222;
+        margin-bottom: 1.2rem;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
+    }
+    .ticket-description-block {
+        background: #f8f9fa;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        min-height: 80px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
+    }
+    .ticket-attachments-block {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .ticket-attachment-card {
+        display: flex;
+        align-items: center;
+        gap: 0.7em;
+        background: #f3f6fa;
+        border-radius: 0.8em;
+        padding: 0.7em 1.2em;
+        font-size: 1.05rem;
+        color: #0d6efd;
+        text-decoration: none;
+        transition: background 0.15s;
+        border: 1px solid #e0e7ef;
+        word-break: break-all;
+    }
+    .ticket-attachment-card:hover {
+        background: #e9f1ff;
+        color: #084298;
+        text-decoration: underline;
+    }
+</style>
+
+<div class="ticket-main-card">
+    <!-- Заголовок и статус -->
+    <div class="ticket-title-row">
+        <h2>Заявка #{{ ticket.id }}</h2>
+        <span class="ticket-status-badge
+                {% if ticket.status == 'новая' %}bg-success
+                {% elif ticket.status == 'в работе' %}bg-warning text-dark
+                {% elif ticket.status == 'завершена' %}bg-secondary
+                {% else %}bg-light text-dark
+                {% endif %}">
+            {{ ticket.status|capitalize }}
+        </span>
+    </div>
+
+    <!-- Детали заявки -->
+    <div class="ticket-details-row">
+        <div class="ticket-details-col">
+            <div class="ticket-details-label">Отправитель</div>
+            <div class="ticket-details-value">{{ ticket.sender }}</div>
+            <div class="ticket-details-label">Тема</div>
+            <div class="ticket-details-value">{{ ticket.subject }}</div>
+        </div>
+        <div class="ticket-details-col">
+            <div class="ticket-details-label">Дата создания</div>
+            <div class="ticket-details-value">{{ ticket.created_at|dt }}</div>
+            <div class="ticket-details-label">Ответственный</div>
+            <div class="ticket-details-value">
+                {% if ticket.assigned_username %}
+                    {{ ticket.assigned_username }}
+                {% else %}
+                    <span class="text-muted">Не назначен</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Описание -->
+    <div>
+        <div class="ticket-details-label mb-1">Описание</div>
+        <div class="ticket-description-block">{{ ticket.body | safe }}</div>
+    </div>
+
+    <!-- Вложения -->
+    {% if ticket.attachment %}
+    <div>
+        <div class="ticket-details-label mb-1">Вложения</div>
+        <div class="ticket-attachments-block">
+            {% for file in ticket.attachment.split(',') %}
+            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank" class="ticket-attachment-card">
+                <i class="bi bi-paperclip"></i> {{ file }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
