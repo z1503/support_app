@@ -4,84 +4,340 @@
 
 {% block content %}
 <style>
+    /* Ваши существующие стили ... */
+    .ticket-main-card {
+        max-width: 1200px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 2.5rem 2rem 2rem 2rem;
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    @media (max-width: 767px) {
+        .ticket-main-card {
+            padding: 1rem 0.4rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            gap: 1.2rem;
+        }
+
+        .ticket-title-row h2 {
+            font-size: 1.15rem;
+        }
+
+        .ticket-status-badge {
+            font-size: 0.98rem;
+            padding: 0.4em 1em;
+        }
+
+        .ticket-details-row {
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .ticket-details-col {
+            min-width: 0;
+            font-size: 1em;
+        }
+
+        .ticket-details-label {
+            font-size: 0.97em;
+            margin-bottom: 0.12rem;
+        }
+
+        .ticket-details-value {
+            font-size: 1.05em;
+            margin-bottom: 0.7rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+
+        .ticket-description-block {
+            padding: 1em 0.7em;
+            border-radius: 0.7em;
+            font-size: 0.98em;
+            min-height: 50px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-line;
+        }
+
+        .ticket-attachments-block {
+            gap: 0.5rem;
+        }
+
+        .ticket-attachment-card {
+            font-size: 0.97em;
+            padding: 0.5em 0.7em;
+            border-radius: 0.5em;
+            word-break: break-all;
+        }
+
+        .ticket-form-block {
+            padding: 1em 0.5em;
+            border-radius: 0.7em;
+            margin-top: 1em;
+        }
+
+        .ticket-btn-secondary {
+            font-size: 1em;
+            padding: 0.5rem 0;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Стили для комментариев на мобильных */
+        .comments-section {
+            margin-top: 1.5rem;
+        }
+
+        .comment {
+            padding: 0.8em 0.7em;
+            border-radius: 0.7em;
+            font-size: 0.95em;
+        }
+
+        .comment-header strong {
+            font-size: 0.98em;
+        }
+
+        .comment-date {
+            font-size: 0.85em;
+        }
+
+        .comment-avatar {
+            width: 28px;
+            height: 28px;
+        }
+
+        .add-comment-form {
+            padding: 1em 0.5em;
+            border-radius: 0.7em;
+            margin-top: 1em;
+        }
+
+        .add-comment-form textarea {
+            font-size: 0.98em;
+        }
+    }
+
+    .ticket-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .ticket-title-row h2 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        word-break: break-all;
+    }
+
+    .ticket-status-badge {
+        font-size: 1.15rem;
+        padding: 0.6em 1.4em;
+        border-radius: 2em;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        display: inline-block;
+    }
+
+    .ticket-status-badge.bg-success {
+        background: #e7fbe7 !important;
+        color: #198754 !important;
+    }
+
+    .ticket-status-badge.bg-warning {
+        background: #fffbe7 !important;
+        color: #b8860b !important;
+    }
+
+    .ticket-status-badge.bg-secondary {
+        background: #f1f1f1 !important;
+        color: #555 !important;
+    }
+
+    .ticket-status-badge.bg-light {
+        background: #f8f9fa !important;
+        color: #222 !important;
+    }
+
+    .ticket-details-row {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .ticket-details-col {
+        flex: 1 1 260px;
+        min-width: 220px;
+    }
+
+    .ticket-details-label {
+        color: #888;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+
+    .ticket-details-value {
+        font-size: 1.15rem;
+        font-weight: 500;
+        color: #222;
+        margin-bottom: 1.2rem;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
+    }
+
+    .ticket-description-block {
+        background: #f8f9fa;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        min-height: 80px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-line;
+    }
+
+    .ticket-attachments-block {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .ticket-attachment-card {
+        display: flex;
+        align-items: center;
+        gap: 0.7em;
+        background: #f3f6fa;
+        border-radius: 0.8em;
+        padding: 0.7em 1.2em;
+        font-size: 1.05rem;
+        color: #0d6efd;
+        text-decoration: none;
+        transition: background 0.15s;
+        border: 1px solid #e0e7ef;
+        word-break: break-all;
+    }
+
+    .ticket-attachment-card:hover {
+        background: #e9f1ff;
+        color: #084298;
+        text-decoration: underline;
+    }
+
+    .ticket-form-block {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .ticket-btn-main {
+        font-size: 1.25rem;
+        padding: 0.9rem 0;
+        border-radius: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .ticket-btn-secondary {
+        font-size: 1.1rem;
+        padding: 0.7rem 0;
+        border-radius: 0.7rem;
+        font-weight: 500;
+        margin-top: 0.7rem;
+    }
+
+    /* Стили для комментариев (новые) */
     .comments-section {
         margin-top: 2rem;
         border-top: 1px solid #e9ecef;
         padding-top: 1.5rem;
     }
+
     .comments-section h4 {
         font-size: 1.5rem;
         font-weight: 600;
         margin-bottom: 1.5rem;
         color: #333;
     }
-    .comment-card {
-        background: #f9f9f9;
+
+    .comment {
+        background-color: #f9f9f9;
         border: 1px solid #eee;
         border-radius: 1rem;
-        padding: 1rem;
+        padding: 1.2rem 1.5rem;
         margin-bottom: 1.2rem;
-        max-width: 100%;
-        box-sizing: border-box;
-        word-break: break-word;
-        overflow-wrap: break-word;
         display: flex;
-        flex-direction: column;
-        gap: 0.7rem;
+        gap: 1rem;
     }
-    .comment-card.internal {
-        background: #fff8e1;
+
+    .comment.internal-comment {
+        background-color: #fff8e1;
+        /* Светло-желтый фон для внутренних */
         border-left: 4px solid #ffc107;
+        /* Желтая полоса слева */
     }
-    .comment-header {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        flex-wrap: wrap;
-        min-width: 0;
+
+    .comment-avatar-col {
+        flex-shrink: 0;
     }
+
     .comment-avatar {
-        width: 38px;
-        height: 38px;
+        width: 45px;
+        height: 45px;
         border-radius: 50%;
         object-fit: cover;
         border: 2px solid #fff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.09);
-        background: #eee;
-        flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
-    .comment-meta {
-        flex: 1 1 0;
-        min-width: 0;
+
+    .comment-content-col {
+        flex-grow: 1;
+    }
+
+    .comment-header {
         display: flex;
-        flex-direction: column;
-        gap: 0.1em;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
     }
-    .comment-author {
-        font-size: 1rem;
+
+    .comment-header strong {
+        font-size: 1.1rem;
         font-weight: 600;
         color: #2c3e50;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        min-width: 0;
     }
-    .internal-badge {
-        background: #ffc107;
-        color: #222;
-        border-radius: 0.4em;
-        font-size: 0.85em;
-        padding: 0.15em 0.7em;
-        margin-left: 0.4em;
-    }
+
     .comment-date {
-        font-size: 0.93rem;
+        font-size: 0.9rem;
         color: #7f8c8d;
-        margin-top: 0.1rem;
     }
+
+    .comment-badge-internal {
+        font-size: 0.85rem;
+        padding: 0.2em 0.6em;
+        border-radius: 0.4em;
+        margin-left: 0.5rem;
+    }
+
     .comment-body {
-        font-size: 1.07rem;
+        font-size: 1.05rem;
         line-height: 1.6;
         color: #34495e;
         white-space: pre-wrap;
@@ -90,86 +346,344 @@
         max-width: 100%;
         box-sizing: border-box;
     }
-    .comment-attachments {
-        margin-top: 0.7rem;
-        font-size: 0.95rem;
-        word-break: break-all;
+
     }
+
+    .comment-attachments {
+        margin-top: 0.8rem;
+        font-size: 0.95rem;
+    }
+
     .comment-attachments a {
+        margin-right: 0.8rem;
         color: #3498db;
         text-decoration: none;
-        margin-right: 0.8rem;
-        word-break: break-all;
     }
+
     .comment-attachments a:hover {
         text-decoration: underline;
     }
-    @media (max-width: 600px) {
-        .comment-card {
-            padding: 0.7em 0.4em;
-            border-radius: 0.7em;
-            font-size: 0.97em;
-            max-width: 100vw;
-        }
-        .comment-header {
-            gap: 0.5rem;
-        }
-        .comment-avatar {
-            width: 28px;
-            height: 28px;
-        }
-        .comment-body {
-            font-size: 0.98rem;
-            padding: 0.2em 0;
-        }
+
+    .comment-attachments i {
+        margin-right: 0.3rem;
+    }
+
+    .add-comment-form {
+        background: #f8fafd;
+        border-radius: 1.2rem;
+        padding: 1.5rem 1.2rem;
+        margin-top: 2rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .add-comment-form h4 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .add-comment-form textarea {
+        min-height: 100px;
+        font-size: 1.1rem;
+    }
+
+    .add-comment-form .form-check-label {
+        font-size: 1rem;
     }
 </style>
 
-<!-- ... остальная часть вашей карточки заявки ... -->
+<div class="ticket-main-card">
+    <!-- Заголовок и статус -->
+    <div class="ticket-title-row">
+        <h2>Заявка #{{ ticket.id }}</h2>
+        <span class="ticket-status-badge
+                {% if ticket.status == 'новая' %}bg-success
+                {% elif ticket.status == 'в работе' %}bg-warning text-dark
+                {% elif ticket.status == 'завершена' %}bg-secondary
+                {% else %}bg-light text-dark
+                {% endif %}">
+            {{ ticket.status|capitalize }}
+        </span>
+    </div>
 
-<div class="comments-section">
-    <h4>Комментарии</h4>
-    {% if comments %}
-        {% for comment in comments %}
-        <div class="comment-card{% if comment.is_internal and session.role != 'client' %} internal{% endif %}">
-            <div class="comment-header">
-                <img class="comment-avatar"
-                     src="{{ url_for('static', filename='uploads/' + (comment.user_avatar if comment.user_avatar else 'default_avatar.png')) }}"
-                     alt="Аватар"
-                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/default_avatar.png') }}';">
-                <div class="comment-meta">
-                    <div class="comment-author">
-                        {% if comment.user_id and comment.user_username %}
-                            {{ comment.user_username }}
-                        {% elif comment.author_name %}
-                            {{ comment.author_name }} <span class="text-muted small">(Гость)</span>
-                        {% else %}
-                            Система
-                        {% endif %}
-                        {% if comment.is_internal and session.role != 'client' %}
-                            <span class="internal-badge">Внутренний</span>
+    <!-- Детали заявки -->
+    <div class="ticket-details-row">
+        <div class="ticket-details-col">
+            <div class="ticket-details-label">Отправитель</div>
+            <div class="ticket-details-value">{{ ticket.sender }}</div>
+            <div class="ticket-details-label">Тема</div>
+            <div class="ticket-details-value">{{ ticket.subject }}</div>
+        </div>
+        <div class="ticket-details-col">
+            <div class="ticket-details-label">Дата создания</div>
+            <div class="ticket-details-value">{{ ticket.created_at|dt }}</div>
+            <div class="ticket-details-label">Ответственный</div>
+            <div class="ticket-details-value">
+                {% if ticket.assigned_username %}
+                {{ ticket.assigned_username }}
+                {% else %}
+                <span class="text-muted">Не назначен</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Описание -->
+    <div>
+        <div class="ticket-details-label mb-1">Описание</div>
+        <div class="ticket-description-block">{{ ticket.body | safe }}</div>
+    </div>
+
+    <!-- Вложения -->
+    {% if ticket.attachment %}
+    <div>
+        <div class="ticket-details-label mb-1">Вложения к заявке</div>
+        <div class="ticket-attachments-block">
+            {% for file in ticket.attachment.split(',') %}
+            {% if file %} {# Добавлена проверка, чтобы не выводить пустые элементы если в строке запятая в конце #}
+            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank" class="ticket-attachment-card">
+                <i class="bi bi-paperclip"></i> {{ file }}
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="chat-section">
+        <style>
+            .chat-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .chat-message {
+                display: flex;
+                align-items: flex-end;
+                max-width: 100%;
+            }
+
+            .chat-message.own {
+                flex-direction: row-reverse;
+            }
+
+            .chat-bubble {
+                max-width: 85vw;
+                padding: 0.9em 1.2em;
+                border-radius: 1.3em;
+                background: #e7f1ff;
+                color: #222;
+                font-size: 1.07rem;
+                line-height: 1.5;
+                position: relative;
+                word-break: break-word;
+                overflow-wrap: break-word;
+                box-sizing: border-box;
+                min-width: 0;
+            }
+
+            .chat-message.own .chat-bubble {
+                background: #d1f7d6;
+                color: #1b5e20;
+                align-self: flex-end;
+            }
+
+            .chat-message.internal .chat-bubble {
+                background: #fff8e1;
+                border-left: 4px solid #ffc107;
+                color: #222;
+            }
+
+            .chat-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin: 0 0.7em;
+                border: 2px solid #fff;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.09);
+                background: #eee;
+                flex-shrink: 0;
+            }
+
+            .chat-meta {
+                font-size: 0.93rem;
+                color: #7f8c8d;
+                margin-top: 0.4em;
+                display: flex;
+                align-items: center;
+                gap: 0.7em;
+            }
+
+            .chat-author {
+                font-weight: 600;
+                color: #0d6efd;
+                margin-right: 0.6em;
+                font-size: 1em;
+            }
+
+            .chat-bubble .chat-attachments {
+                margin-top: 0.6em;
+                font-size: 0.95em;
+            }
+
+            .chat-bubble .chat-attachments a {
+                color: #3498db;
+                text-decoration: none;
+                margin-right: 0.7em;
+                word-break: break-all;
+            }
+
+            .chat-bubble .chat-attachments a:hover {
+                text-decoration: underline;
+            }
+
+            @media (max-width: 600px) {
+                .chat-bubble {
+                    font-size: 0.98rem;
+                    padding: 0.7em 0.9em;
+                    max-width: 95vw;
+                }
+
+                .chat-avatar {
+                    width: 28px;
+                    height: 28px;
+                    margin: 0 0.4em;
+                }
+            }
+        </style>
+        <h4>Комментарии</h4>
+        <div class="chat-list">
+            {% if comments %}
+            {% for comment in comments %}
+            {% set is_own = (session.get('user_id') and comment.user_id == session.get('user_id')) %}
+            <div class="chat-message
+            {% if is_own %} own{% endif %}
+            {% if comment.is_internal and session.role != 'client' %} internal{% endif %}">
+                <img class="chat-avatar"
+                    src="{{ url_for('static', filename='uploads/' + (comment.user_avatar if comment.user_avatar else 'default_avatar.png')) }}"
+                    alt="Аватар"
+                    onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/default_avatar.png') }}';">
+                <div>
+                    <div class="chat-bubble">
+                        <div>
+                            {% if comment.user_id and comment.user_username %}
+                            <span class="chat-author">{{ comment.user_username }}</span>
+                            {% elif comment.author_name %}
+                            <span class="chat-author">{{ comment.author_name }} <span
+                                    class="text-muted small">(Гость)</span></span>
+                            {% else %}
+                            <span class="chat-author">Система</span>
+                            {% endif %}
+                            {% if comment.is_internal and session.role != 'client' %}
+                            <span class="badge bg-warning text-dark" style="font-size:0.85em;">Внутренний</span>
+                            {% endif %}
+                        </div>
+                        <div>{{ comment.body | safe }}</div>
+                        {% if comment.attachment %}
+                        <div class="chat-attachments">
+                            <strong>Вложения:</strong>
+                            {% for att_file in comment.attachment.split(',') %}
+                            {% if att_file %}
+                            <a href="{{ url_for('uploaded_file', filename=att_file) }}" target="_blank">{{ att_file
+                                }}</a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
-                    <div class="comment-date">{{ comment.created_at|dt }}</div>
+                    <div class="chat-meta">
+                        <span>{{ comment.created_at|dt }}</span>
+                    </div>
                 </div>
             </div>
-            <div class="comment-body">
-                {{ comment.body | safe }}
-            </div>
-            {% if comment.attachment %}
-            <div class="comment-attachments">
-                <strong>Вложения:</strong>
-                {% for att_file in comment.attachment.split(',') %}
-                    {% if att_file %}
-                    <a href="{{ url_for('uploaded_file', filename=att_file) }}" target="_blank">{{ att_file }}</a>
-                    {% endif %}
-                {% endfor %}
-            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-muted">Комментариев пока нет.</p>
             {% endif %}
         </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted">Комментариев пока нет.</p>
+    </div>
+
+    <!-- Форма добавления комментария (НОВОЕ) -->
+    <div class="add-comment-form">
+        <h4>Добавить комментарий</h4>
+        <form method="POST" action="{{ url_for('add_comment_route', ticket_id=ticket.id) }}"
+            enctype="multipart/form-data">
+            {# CSRF токен, если вы его используете с Flask-WTF или другой библиотекой #}
+            {# {{ comment_form.hidden_tag() }} #}
+            <div class="mb-3">
+                <label for="comment_body" class="form-label visually-hidden">Текст комментария</label>
+                <textarea class="form-control" id="comment_body" name="body" rows="4"
+                    placeholder="Введите ваш комментарий здесь..." required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="comment_files" class="form-label">Прикрепить файлы к комментарию (до 16MB):</label>
+                <input class="form-control form-control-sm" type="file" id="comment_files" name="comment_files[]"
+                    multiple>
+            </div>
+
+            {% if session.get("role") in ["admin", "user"] %} {# 'user' здесь - роль сотрудника #}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="is_internal" id="is_internal_comment">
+                <label class="form-check-label" for="is_internal_comment">
+                    Внутренний комментарий (виден только сотрудникам)
+                </label>
+            </div>
+            {% endif %}
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-send"></i> Отправить
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Форма управления заявкой (существующая) -->
+    {% if session.get("role") in ["admin", "user"] %}
+    <div class="ticket-form-block mt-4"> {# Добавлен mt-4 для отступа сверху #}
+        <h4 class="mb-3">Управление заявкой</h4> {# Добавлен заголовок для ясности #}
+        <form method="POST" action="{{ url_for('ticket', ticket_id=ticket.id) }}"> {# Убедитесь, что action правильный
+            для обновления заявки #}
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label for="status" class="form-label mb-1">Статус</label>
+                    <select name="status" class="form-select form-select-sm" required>
+                        <option value="новая" {% if ticket.status=='новая' %}selected{% endif %}>Новая</option>
+                        <option value="в работе" {% if ticket.status=='в работе' %}selected{% endif %}>В работе</option>
+                        <option value="завершена" {% if ticket.status=='завершена' %}selected{% endif %}>Завершена
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="assigned_to" class="form-label mb-1">Ответственный</label>
+                    <select name="assigned_to" class="form-select form-select-sm">
+                        <option value="">Не назначать</option>
+                        {% for user_assign in users %} {# Переименовал user в user_assign чтобы не конфликтовать с
+                        возможным user из сессии #}
+                        <option value="{{ user_assign.id }}" {% if ticket.assigned_to==user_assign.id %}selected{% endif
+                            %}>
+                            {{ user_assign.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="text-end mt-3">
+                <button type="submit" class="btn btn-success px-4"> {# Изменил цвет кнопки для отличия #}
+                    <i class="bi bi-save me-1"></i>Обновить заявку
+                </button>
+            </div>
+        </form>
+    </div>
     {% endif %}
+
+    <!-- Кнопка назад -->
+    <a class="btn btn-outline-secondary ticket-btn-secondary w-100 mt-4" href="{{ url_for('dashboard') }}"> {# Добавлен
+        mt-4 #}
+        <i class="bi bi-arrow-left"></i> Назад к списку заявок
+    </a>
 </div>
 {% endblock %}
