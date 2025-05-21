@@ -103,6 +103,34 @@ def role_required(role):
         return decorated_function
     return decorator
 
+def send_new_comment_email(
+    recipient_email,
+    recipient_username,
+    ticket_id,
+    ticket_subject,
+    comment_body,
+    ticket_access_url,
+    comment_author_name,
+    attachments=None  # attachments — список файлов, если нужно
+):
+    html_body = render_template(
+        "email/new_comment.html",
+        recipient_username=recipient_username,
+        ticket_id=ticket_id,
+        ticket_subject=ticket_subject,
+        comment_body=comment_body,
+        ticket_access_url=ticket_access_url,
+        comment_author_name=comment_author_name,
+        attachments=attachments
+    )
+    subject_line = f"Новый комментарий к заявке #{ticket_id}: {ticket_subject}"
+    msg = Message(
+        subject=subject_line,
+        recipients=[recipient_email],
+        html=html_body
+    )
+    mail.send(msg) 
+        
 def decode_sender(encoded_sender):
     decoded_parts = decode_header(encoded_sender)
     decoded_str = ""
@@ -425,56 +453,106 @@ def create():
 
 
 @app.route("/ticket/<int:ticket_id>", methods=["GET", "POST"])
-@login_required
+@login_required # Декоратор из вашего paste.txt
 def ticket(ticket_id):
     with get_db_connection() as conn:
-        ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-        if ticket is None:
+        # Получаем данные заявки и имя создателя
+        ticket_data_row = conn.execute(
+            "SELECT t.*, u_creator.username as creator_username FROM tickets t LEFT JOIN users u_creator ON t.user_id = u_creator.id WHERE t.id = ?",
+            (ticket_id,)
+        ).fetchone()
+
+        if ticket_data_row is None:
             flash("Заявка не найдена.", "error")
             return redirect(url_for('dashboard'))
 
-        users = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
-        ticket_dict = dict(ticket)
-        ticket_dict["sender"] = decode_sender(ticket_dict["sender"])
+        current_user_id = session.get("user_id") # Из paste.txt сессия хранит user_id
+        current_user_role = session.get("role")
+
+        # Проверка прав доступа: клиент может видеть только свои заявки
+        if current_user_role == "client" and ticket_data_row["user_id"] != current_user_id:
+            flash("У вас нет доступа к этой заявке.", "error")
+            return redirect(url_for('dashboard'))
+
+        # Пользователи для назначения (сотрудники и админы)
+        # Роль 'user' в paste.txt, похоже, используется для сотрудников, не являющихся админами
+        users_for_assign = conn.execute("SELECT id, username FROM users WHERE role IN ('admin', 'user')").fetchall()
+        
+        ticket_dict = dict(ticket_data_row)
+        # Используем имя создателя из users, если sender из заявки пуст (для заявок, созданных авторизованными)
+        ticket_dict["sender"] = decode_sender(ticket_dict["sender"]) if ticket_dict["sender"] else ticket_dict["creator_username"]
         ticket_dict["subject"] = decode_sender(ticket_dict["subject"])
-        # Оставляем created_at как строку!
-        # ticket_dict["created_at"] = ticket_dict["created_at"]
 
+        # Загрузка комментариев
+        comments_query_sql = """
+            SELECT c.*, u.username as user_username, u.avatar as user_avatar
+            FROM comments c
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE c.ticket_id = ?
+        """
+        # Клиенты видят только публичные комментарии
+        if current_user_role == "client":
+            comments_query_sql += " AND (c.is_internal = 0 OR c.is_internal IS NULL)"
+        
+        comments_query_sql += " ORDER BY c.created_at ASC" # или DESC для обратного порядка
+        
+        comments_list = conn.execute(comments_query_sql, (ticket_id,)).fetchall()
+        
+        # Обработка POST запроса (обновление статуса, назначение исполнителя заявки)
+        # Добавление комментариев обрабатывается отдельным маршрутом /add_comment
         if request.method == "POST":
-            status = request.form.get("status")
-            assigned_to = request.form.get("assigned_to")
-            status_changed = False
+            new_status = request.form.get("status")
+            new_assigned_to_str = request.form.get("assigned_to") # ID пользователя или пустая строка
+            status_changed_flag = False
+            assignee_changed_flag = False
 
-            if status and status != ticket_dict["status"]:
-                conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (status, ticket_id))
-                status_changed = True
+            if new_status and new_status != ticket_dict["status"]:
+                conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (new_status, ticket_id))
+                status_changed_flag = True
+            
+            new_assigned_to_id = None
+            if new_assigned_to_str: # Если что-то выбрано
+                try:
+                    new_assigned_to_id = int(new_assigned_to_str)
+                except ValueError:
+                    flash("Некорректный ID исполнителя.", "warning")
+                    # Оставляем текущего исполнителя или None, если его не было
+                    new_assigned_to_id = ticket_dict.get("assigned_to") 
+            
+            # Проверяем, изменился ли исполнитель (включая назначение/снятие None)
+            if new_assigned_to_id != ticket_dict.get("assigned_to"):
+                conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (new_assigned_to_id, ticket_id))
+                assignee_changed_flag = True
+            elif 'assigned_to' in request.form and not new_assigned_to_str and ticket_dict.get("assigned_to") is not None:
+                # Если поле было передано пустым (сняли исполнителя), а ранее он был
+                conn.execute("UPDATE tickets SET assigned_to = NULL WHERE id = ?", (ticket_id,))
+                assignee_changed_flag = True
 
-            if assigned_to:
-                conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (assigned_to, ticket_id))
+            if status_changed_flag or assignee_changed_flag:
+                conn.commit() 
+            
+                if status_changed_flag and ticket_dict.get("user_id"): # Если заявка от авторизованного пользователя
+                    user_for_email_notification = conn.execute(
+                        "SELECT u.email, u.username FROM users u WHERE u.id = ?",
+                        (ticket_dict["user_id"],)
+                    ).fetchone()
+                    if user_for_email_notification and user_for_email_notification["email"]:
+                        domain = request.host_url.rstrip('/')
+                        # Ссылка на обычную заявку, так как пользователь авторизован
+                        ticket_access_url = f"{domain}/ticket/{ticket_id}" 
+                        send_status_update_email( # Функция из paste.txt
+                            user_for_email_notification["email"],
+                            user_for_email_notification["username"],
+                            ticket_id,
+                            new_status if new_status else ticket_dict["status"], # передаем актуальный статус
+                            ticket_access_url,
+                            ticket_dict["subject"] 
+                        )
+                
+                flash("Заявка обновлена.", "success")
+                return redirect(url_for('ticket', ticket_id=ticket_id)) # Перезагрузка для отображения изменений
 
-            conn.commit()
-
-            if status_changed:
-                user = conn.execute(
-                    "SELECT u.email, u.username FROM users u WHERE u.id = ?",
-                    (ticket_dict["user_id"],)
-                ).fetchone()
-                if user:
-                    domain = request.host_url.rstrip('/')
-                    ticket_url = f"{domain}/ticket/{ticket_id}"
-                    send_status_update_email(
-                        user["email"],
-                        user["username"],
-                        ticket_id,
-                        status,
-                        ticket_url,
-                        ticket_dict["subject"]
-                    )
-
-            flash("Заявка обновлена.", "success")
-            return redirect(url_for('ticket', ticket_id=ticket_id))
-
-    return render_template("ticket.html", ticket=ticket_dict, users=users)
+    return render_template("ticket.html", ticket=ticket_dict, users=users_for_assign, comments=comments_list)
 
 
 @app.route("/logout")
@@ -872,24 +950,41 @@ def create_public_ticket():
 
     return render_template("create_public_ticket.html")
 
-@app.route("/public_ticket/<int:ticket_id>")
+@app.route("/public_ticket/<int:ticket_id>", methods=["GET"])
 def public_ticket(ticket_id):
-    token = request.args.get("token")
-    if not token:
+    access_token = request.args.get("token")
+    if not access_token:
+        # Можно отобразить шаблон ошибки или просто вернуть код
         return render_template("error.html", message="Токен доступа не указан."), 403
 
     conn = get_db_connection()
-    ticket = conn.execute(
+    ticket_data_row = conn.execute(
         "SELECT * FROM tickets WHERE id = ? AND public_token = ?",
-        (ticket_id, token)
+        (ticket_id, access_token)
     ).fetchone()
-    conn.close()
-
-    if not ticket:
+    
+    if not ticket_data_row:
+        conn.close()
         return render_template("error.html", message="Заявка не найдена или ссылка недействительна."), 404
 
-    return render_template("public_ticket.html", ticket=ticket)
+    # Загрузка комментариев (только публичные, не внутренние)
+    comments_query_sql = """
+        SELECT c.*, u.username as user_username, u.avatar as user_avatar
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.ticket_id = ? AND (c.is_internal = 0 OR c.is_internal IS NULL)
+        ORDER BY c.created_at ASC
+    """
+    comments_list = conn.execute(comments_query_sql, (ticket_id,)).fetchall()
+    conn.close()
+    
+    ticket_dict = dict(ticket_data_row)
+    # Декодируем тему и отправителя для корректного отображения
+    ticket_dict["subject"] = decode_sender(ticket_dict["subject"])
+    ticket_dict["sender"] = decode_sender(ticket_dict["sender"])
 
+    # Передаем токен в шаблон, он понадобится для формы добавления комментария
+    return render_template("public_ticket.html", ticket=ticket_dict, comments=comments_list, public_token=access_token)
 
 @app.route("/thank_you/<int:ticket_id>")
 def thank_you(ticket_id):
@@ -1022,6 +1117,144 @@ def test_email_confirmation():
         confirm_url="https://example.com/confirm/abc123"
     )
 
+@app.route("/ticket/<int:ticket_id>/add_comment", methods=["POST"])
+def add_comment_route(ticket_id):
+    body = request.form.get("body", "").strip()
+    is_internal_form_value = request.form.get("is_internal")
+    is_internal = True if is_internal_form_value == "on" else False
+
+    if not body:
+        flash("Текст комментария не может быть пустым.", "danger")
+        if "user_id" not in session:
+            public_token_from_form = request.form.get('public_token')
+            if public_token_from_form:
+                return redirect(url_for('public_ticket', ticket_id=ticket_id, token=public_token_from_form))
+            else:
+                return redirect(url_for('index'))
+        return redirect(url_for('ticket', ticket_id=ticket_id))
+
+    conn = get_db_connection()
+    ticket_data = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+
+    if not ticket_data:
+        flash("Заявка не найдена.", "error")
+        conn.close()
+        return redirect(url_for('dashboard') if 'user_id' in session else url_for('index'))
+
+    user_id_session = session.get("user_id")
+    current_user_role = session.get("role")
+    current_user_name = session.get("user")
+
+    commenter_db_user_id = None
+    commenter_db_author_name = None
+    commenter_display_name = "Система"
+
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    created_at_dt = datetime.now(moscow_tz)
+    created_at_str = created_at_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+    comment_attachments_list = []
+    files_from_form = request.files.getlist("comment_files[]")
+    if not files_from_form:
+        files_from_form = request.files.getlist("files[]")
+
+    for file_storage in files_from_form:
+        if file_storage and file_storage.filename:
+            filename = save_file(file_storage)
+            if filename:
+                comment_attachments_list.append(filename)
+            else:
+                flash("Неподдерживаемый формат файла или MIME-типа для вложения в комментарий. Разрешены: jpg, jpeg, png, pdf, docx, txt.", "danger")
+                conn.close()
+                if user_id_session and (ticket_data['user_id'] == user_id_session or current_user_role != 'client'):
+                    return redirect(url_for('ticket', ticket_id=ticket_id))
+                elif ticket_data['public_token'] == request.form.get('public_token'):
+                    return redirect(url_for('public_ticket', ticket_id=ticket_id, token=ticket_data['public_token']))
+                else:
+                    return redirect(url_for('dashboard') if user_id_session else url_for('index'))
+
+    attachment_str_for_db = ",".join(comment_attachments_list) if comment_attachments_list else None
+
+    if user_id_session:
+        commenter_db_user_id = user_id_session
+        commenter_display_name = current_user_name if current_user_name else f"Пользователь ID {user_id_session}"
+        if current_user_role == 'client':
+            is_internal = False
+    else:
+        public_token_from_form = request.form.get("public_token")
+        if not ticket_data['public_token'] or ticket_data['public_token'] != public_token_from_form:
+            flash("Неверный токен для публичной заявки.", "danger")
+            conn.close()
+            return redirect(url_for('index'))
+        author_email_from_form = request.form.get("comment_author_email", "").strip()
+        if not author_email_from_form:
+            flash("Укажите ваш email для комментирования публичной заявки.", "danger")
+            conn.close()
+            return redirect(url_for('public_ticket', ticket_id=ticket_id, token=public_token_from_form))
+        commenter_db_author_name = author_email_from_form
+        commenter_display_name = author_email_from_form
+        is_internal = False
+
+    try:
+        conn.execute(
+            "INSERT INTO comments (ticket_id, user_id, author_name, body, created_at, is_internal, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (ticket_id, commenter_db_user_id, commenter_db_author_name, body, created_at_str, 1 if is_internal else 0, attachment_str_for_db)
+        )
+        conn.commit()
+        flash("Комментарий успешно добавлен.", "success")
+
+        if not is_internal:
+            ticket_creator_user_id = ticket_data['user_id']
+            ticket_public_sender_email = decode_sender(ticket_data['sender']) if ticket_data['sender'] else None
+            ticket_subject_decoded = decode_sender(ticket_data['subject'])
+            domain = request.host_url.rstrip('/')
+
+            if ticket_creator_user_id:
+                if commenter_db_user_id != ticket_creator_user_id:
+                    client_user_info = conn.execute("SELECT email, username FROM users WHERE id = ?", (ticket_creator_user_id,)).fetchone()
+                    if client_user_info and client_user_info['email']:
+                        ticket_access_url = f"{domain}/ticket/{ticket_id}"
+                        send_new_comment_email(client_user_info['email'], client_user_info['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url, commenter_display_name)
+            elif ticket_public_sender_email:
+                if not commenter_db_author_name or commenter_db_author_name.lower() != ticket_public_sender_email.lower():
+                    ticket_access_url = f"{domain}/public_ticket/{ticket_id}?token={ticket_data['public_token']}"
+                    send_new_comment_email(ticket_public_sender_email, ticket_public_sender_email, ticket_id, ticket_subject_decoded, body, ticket_access_url, commenter_display_name)
+
+            is_comment_by_client_or_public = (user_id_session and current_user_role == 'client') or (not user_id_session and commenter_db_author_name)
+            if is_comment_by_client_or_public:
+                notified_staff_ids = set()
+                assigned_staff_id = ticket_data['assigned_to']
+
+                if assigned_staff_id:
+                    assigned_staff_info = conn.execute("SELECT id, email, username FROM users WHERE id = ? AND role != 'client'", (assigned_staff_id,)).fetchone()
+                    if assigned_staff_info and assigned_staff_info['email']:
+                        ticket_access_url_for_staff = f"{domain}/ticket/{ticket_id}"
+                        send_new_comment_email(assigned_staff_info['email'], assigned_staff_info['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url_for_staff, commenter_display_name)
+                        notified_staff_ids.add(assigned_staff_info['id'])
+
+                admin_users = conn.execute("SELECT id, email, username FROM users WHERE role = 'admin'").fetchall()
+                for admin in admin_users:
+                    if admin['id'] not in notified_staff_ids and admin['email']:
+                        ticket_access_url_for_staff = f"{domain}/ticket/{ticket_id}"
+                        send_new_comment_email(admin['email'], admin['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url_for_staff, commenter_display_name)
+
+    except sqlite3.Error as e:
+        app.logger.error(f"Database error when adding comment: {e}")
+        flash(f"Ошибка базы данных при добавлении комментария: {e}", "danger")
+    except Exception as e_general:
+        app.logger.error(f"General error when adding comment: {e_general}")
+        flash(f"Произошла ошибка при добавлении комментария: {e_general}", "danger")
+    finally:
+        if conn:
+            conn.close()
+
+    if user_id_session:
+        return redirect(url_for('ticket', ticket_id=ticket_id))
+    elif ticket_data['public_token']:
+        token_for_redirect = request.form.get('public_token', ticket_data['public_token'])
+        return redirect(url_for('public_ticket', ticket_id=ticket_id, token=token_for_redirect))
+    else:
+        return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
