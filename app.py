@@ -23,6 +23,8 @@ import uuid
 import magic
 import secrets
 from flask import render_template
+import time
+from flask import current_app
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -791,45 +793,81 @@ def update_role():
 
 @app.route("/admin/users/edit/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
-    try:
-        conn = get_db_connection()
-        user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for('login'))
 
-        if not user:
-            flash("Пользователь не найден", "error")
-            return redirect(url_for('admin_users'))
-
-        if request.method == "POST":
-            username = request.form["username"]
-            email = request.form["email"]
-            role = request.form["role"]
-            password = request.form["password"]
-
-            # Если пароль был изменён, то хешируем новый пароль
-            if password:
-                password_hash = generate_password_hash(password)
-                conn.execute("UPDATE users SET username = ?, email = ?, role = ?, password = ? WHERE id = ?",
-                             (username, email, role, password_hash, user_id))
-            else:
-                conn.execute("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?",
-                             (username, email, role, user_id))
-
-            conn.commit()
-            # Получаем обновлённые данные пользователя
-            user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-            conn.close()
-            flash("Данные пользователя успешно обновлены", "success")
-            # Остаёмся на этой же странице
-            return render_template('edit_user.html', user=user)
-
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    
+    if not user:
+        flash("Пользователь не найден", "error")
         conn.close()
-        return render_template('edit_user.html', user=user)
-
-    except Exception as e:
-        app.logger.error(f"Error during user update: {e}")
-        flash("Ошибка при обновлении данных пользователя", "error")
         return redirect(url_for('admin_users'))
 
+    if request.method == "POST":
+        # Обработка удаления аватара
+        if 'delete_avatar' in request.form:
+            avatar_path = os.path.join(current_app.config['UPLOAD_FOLDER'], user['avatar'])
+            if user['avatar'] and user['avatar'] != 'default_avatar.png' and os.path.exists(avatar_path):
+                os.remove(avatar_path)
+            
+            conn.execute("UPDATE users SET avatar = ? WHERE id = ?", ('default_avatar.png', user_id))
+            conn.commit()
+            conn.close()
+            flash("Фото успешно удалено", "success")
+            return redirect(url_for('edit_user', user_id=user_id))
+
+        # Основные данные
+        username = request.form["username"]
+        email = request.form["email"]
+        role = request.form["role"]
+        password = request.form.get("password")
+        
+        # Обработка аватара
+        new_avatar = user['avatar']
+        if 'avatar' in request.files:
+            avatar = request.files['avatar']
+            if avatar and avatar.filename:
+                filename = save_file(avatar)
+                if filename:
+                    # Удаляем старый аватар
+                    old_avatar_path = os.path.join(current_app.config['UPLOAD_FOLDER'], user['avatar'])
+                    if user['avatar'] and user['avatar'] != 'default_avatar.png' and os.path.exists(old_avatar_path):
+                        os.remove(old_avatar_path)
+                    new_avatar = filename
+                else:
+                    flash("Неподдерживаемый формат файла", "danger")
+                    conn.close()
+                    return redirect(url_for('edit_user', user_id=user_id))
+
+        # Обновление пароля и остальных данных
+        update_data = {
+            'username': username,
+            'email': email,
+            'role': role,
+            'avatar': new_avatar
+        }
+        query = """
+            UPDATE users 
+            SET username = :username,
+                email = :email,
+                role = :role,
+                avatar = :avatar
+        """
+        if password:
+            query += ", password = :password"
+            update_data['password'] = generate_password_hash(password)
+        query += " WHERE id = :id"
+        update_data['id'] = user_id
+
+        conn.execute(query, update_data)
+        conn.commit()
+        conn.close()
+        flash("Данные успешно обновлены", "success")
+        return redirect(url_for('edit_user', user_id=user_id))
+
+    conn.close()
+    return render_template('edit_user.html', user=user, ts=time.time())
 
 @app.route("/admin/users/create_user", methods=["POST"])
 def create_user():

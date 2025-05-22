@@ -59,27 +59,89 @@
         font-weight: 500;
         margin-top: 0.7rem;
     }
-</style>
 
+    /* Стили для аватара */
+    .avatar-container {
+        text-align: center;
+        margin: 2rem 0 1rem 0;
+    }
+
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #e9ecef;
+        margin-bottom: 1rem;
+        background: #f0f0f0;
+    }
+
+    .avatar-upload-label {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #0d6efd;
+        color: white;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .avatar-upload-label:hover {
+        background: #0b5ed7;
+    }
+
+    .avatar-upload-input {
+        display: none;
+    }
+
+    .avatar-delete-btn {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.3rem 0.7rem;
+    }
+</style>
 
 <div class="ticket-main-card">
     <!-- Заголовок -->
     <div class="ticket-title-row">
         <h2>Редактирование пользователя</h2>
     </div>
+
     <!-- Форма редактирования -->
     <div class="ticket-form-block">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
+            <!-- Блок аватара -->
+            <div class="avatar-container">
+                <img src="{{ url_for('static', filename='uploads/' + (user.avatar if user.avatar else 'default_avatar.png')) }}?t={{ '%0.0f' | format(ts) }}"
+                    class="avatar-preview" alt="Текущий аватар" id="avatarPreview">
+                <br>
+                <label class="avatar-upload-label">
+                    <input type="file" class="avatar-upload-input" name="avatar" id="avatarInput" accept="image/*">
+                    Изменить фото
+                </label>
+
+                <!-- Кнопка удаления (только если аватар не дефолтный) -->
+                {% if user.avatar and user.avatar != 'default_avatar.png' %}
+                <div>
+                    <button type="submit" name="delete_avatar" class="btn btn-danger avatar-delete-btn"
+                        onclick="return confirm('Удалить текущее фото?')">
+                        <i class="bi bi-trash"></i> Удалить
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Остальная часть формы -->
             <div class="row g-4">
                 <div class="col-12 col-md-6">
                     <label for="username" class="form-label">Имя пользователя</label>
-                    <input type="text" class="form-control form-control-lg" name="username" value="{{ user.username }}"
-                        required>
+                    <input type="text" class="form-control form-control-lg" name="username" value="{{ user.username }}" required>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control form-control-lg" name="email" value="{{ user.email }}"
-                        required>
+                    <input type="email" class="form-control form-control-lg" name="email" value="{{ user.email }}" required>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="role" class="form-label">Роль</label>
@@ -94,16 +156,31 @@
                     <input type="password" class="form-control form-control-lg" name="password">
                 </div>
             </div>
+
             <div class="text-end mt-4">
                 <button type="submit" class="btn btn-primary ticket-btn-main px-5">
                     <i class="bi bi-save me-2"></i>Обновить
                 </button>
             </div>
         </form>
+
         <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary ticket-btn-secondary w-100 mt-3">
             <i class="bi bi-arrow-left"></i> Назад к пользователям
         </a>
     </div>
 </div>
 
+<script>
+    // Скрипт для предпросмотра аватара
+    document.getElementById('avatarInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 {% endblock %}
