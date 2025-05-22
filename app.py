@@ -25,6 +25,8 @@ import secrets
 from flask import render_template
 import time
 from flask import current_app
+from flask import jsonify
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -1172,13 +1174,13 @@ def test_email_confirmation():
 
 @app.route("/ticket/<int:ticket_id>/add_comment", methods=["POST"])
 def add_comment_route(ticket_id):
-    # Проверка аутентификации
+    # Проверка авторизации (или публичного токена)
     if "user_id" not in session and "public_token" not in request.form:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({"error": "Unauthorized"}), 401
         return redirect(url_for('login'))
 
-    # Валидация данных
+    # Валидация текста комментария
     body = request.form.get("body", "").strip()
     if not body:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1193,39 +1195,77 @@ def add_comment_route(ticket_id):
             return handle_error("Заявка не найдена", 404, ticket_id,
                                is_ajax=request.headers.get('X-Requested-With') == 'XMLHttpRequest')
 
-        # Обработка файлов
+        # Обработка файлов-вложений
         files = request.files.getlist("comment_files[]") or request.files.getlist("files[]")
-        attachments = process_attachments(files)
-        if isinstance(attachments, Response):
-            return attachments
+        attachments = []
+        for file in files:
+            if file and file.filename:
+                filename = save_file(file)
+                if not filename:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({"error": "Неподдерживаемый формат файла"}), 400
+                    flash("Неподдерживаемый формат файла.", "danger")
+                    return redirect(url_for('ticket', ticket_id=ticket_id))
+                attachments.append(filename)
+        attachments_str = ",".join(attachments) if attachments else None
 
-        # Подготовка данных комментария
-        comment_data = prepare_comment_data(
-            ticket_data=ticket_data,
-            session=session,
-            request=request,
-            body=body,
-            is_internal=request.form.get("is_internal") == "on",
-            attachments=attachments
-        )
+        # Формируем данные комментария
+        moscow_tz = pytz.timezone('Europe/Moscow')
+        created_at = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+        is_internal = request.form.get("is_internal") == "on" and session.get("role") in ["admin", "user"]
+        author_name = session.get("user", "Гость") if "user_id" in session else request.form.get("comment_author_email", "Гость")
+        user_id = session.get("user_id")
 
-        # Сохранение в БД
+        # Сохраняем комментарий в БД
         conn.execute(
             "INSERT INTO comments (ticket_id, user_id, author_name, body, created_at, is_internal, attachment) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (ticket_id, 
-             comment_data['user_id'], 
-             comment_data['author_name'], 
-             body, 
-             comment_data['created_at'], 
-             1 if comment_data['is_internal'] else 0, 
-             comment_data['attachments'])
+            (ticket_id, user_id, author_name, body, created_at, 1 if is_internal else 0, attachments_str)
         )
         conn.commit()
 
-        # Ответ для AJAX
+        # Отправляем email-уведомление (только если комментарий публичный)
+        if not is_internal:
+            # Для авторизованных пользователей
+            if ticket_data["user_id"]:
+                user = conn.execute("SELECT email, username FROM users WHERE id = ?", (ticket_data["user_id"],)).fetchone()
+                if user and user["email"]:
+                    domain = request.host_url.rstrip('/')
+                    ticket_access_url = f"{domain}/ticket/{ticket_id}"
+                    send_new_comment_email(
+                        recipient_email=user["email"],
+                        recipient_username=user["username"],
+                        ticket_id=ticket_id,
+                        ticket_subject=ticket_data["subject"],
+                        comment_body=body,
+                        ticket_access_url=ticket_access_url,
+                        comment_author_name=author_name,
+                        attachments=attachments if attachments else None
+                    )
+            # Для публичных заявок — отправка на email отправителя
+            elif ticket_data["sender"] if ticket_data else None:
+                domain = request.host_url.rstrip('/')
+                ticket_access_url = f"{domain}/public_ticket/{ticket_id}?token={ticket_data['public_token']}"
+                send_new_comment_email(
+                    recipient_email=ticket_data["sender"],
+                    recipient_username=ticket_data["sender"],
+                    ticket_id=ticket_id,
+                    ticket_subject=ticket_data["subject"],
+                    comment_body=body,
+                    ticket_access_url=ticket_access_url,
+                    comment_author_name=author_name,
+                    attachments=attachments if attachments else None
+                )
+
+        # Если AJAX — возвращаем обновлённый html с комментариями
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            comments = get_updated_comments(conn, ticket_id)
+            comments = conn.execute("""
+                SELECT c.*, u.username, u.avatar 
+                FROM comments c
+                LEFT JOIN users u ON c.user_id = u.id
+                WHERE c.ticket_id = ?
+                ORDER BY c.created_at ASC
+            """, (ticket_id,)).fetchall()
             html = render_template("comments_partial.html", comments=comments)
             conn.close()
             return html
@@ -1235,13 +1275,18 @@ def add_comment_route(ticket_id):
 
     except Exception as e:
         conn.rollback()
-        app.logger.error(f"Error: {str(e)}")
+        app.logger.error(f"Ошибка при добавлении комментария: {e}")
         return handle_error(str(e), 500, ticket_id,
                            is_ajax=request.headers.get('X-Requested-With') == 'XMLHttpRequest')
-
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+
+def handle_error(message, code, ticket_id, is_ajax=False):
+    if is_ajax:
+        return jsonify({"error": message}), code
+    flash(message, "danger")
+    return redirect(url_for('ticket', ticket_id=ticket_id))
+
 
 def handle_error(message, code, ticket_id, is_ajax=False):
     if is_ajax:
