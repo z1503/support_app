@@ -1,0 +1,46 @@
+{% for comment in comments %}
+    {% set is_own = (session.get('user_id') and comment.user_id == session.get('user_id')) %}
+    <div class="chat-message
+        {% if is_own %} own{% endif %}
+        {% if comment.is_internal and session.role != 'client' %} internal{% endif %}">
+        <img class="chat-avatar"
+             src="{{ url_for('static', filename='uploads/' + (comment.user_avatar if comment.user_avatar else 'default_avatar.png')) }}"
+             alt="Аватар"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='uploads/default_avatar.png') }}';">
+        <div>
+            <div class="chat-bubble">
+                <div>
+                    {% if comment.user_id and comment.user_username %}
+                        <span class="chat-author">{{ comment.user_username }}</span>
+                    {% elif comment.author_name %}
+                        <span class="chat-author">
+                            {{ comment.author_name }}
+                            {% if not comment.user_id %}
+                                <span class="text-muted small">(Гость)</span>
+                            {% endif %}
+                        </span>
+                    {% else %}
+                        <span class="chat-author">Система</span>
+                    {% endif %}
+                    {% if comment.is_internal and session.role != 'client' %}
+                        <span class="badge bg-warning text-dark" style="font-size:0.85em;">Внутренний</span>
+                    {% endif %}
+                </div>
+                <div>{{ comment.body | safe }}</div>
+                {% if comment.attachment %}
+                <div class="chat-attachments">
+                    <strong>Вложения:</strong>
+                    {% for att_file in comment.attachment.split(',') %}
+                        {% if att_file %}
+                        <a href="{{ url_for('uploaded_file', filename=att_file) }}" target="_blank">{{ att_file }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="chat-meta">
+                <span>{{ comment.created_at|dt }}</span>
+            </div>
+        </div>
+    </div>
+{% endfor %}

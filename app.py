@@ -22,6 +22,7 @@ import mimetypes
 import uuid
 import magic
 import secrets
+from flask import render_template
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -301,6 +302,20 @@ def register():
             return "Ошибка при регистрации", 500
 
     return render_template("register.html")
+
+@app.route("/ticket/<int:ticket_id>/comments")
+def ticket_comments_partial(ticket_id):
+    conn = get_db_connection()
+    comments_query = """
+        SELECT c.*, u.username as user_username, u.avatar as user_avatar
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.ticket_id = ?
+        ORDER BY c.created_at ASC
+    """
+    comments = conn.execute(comments_query, (ticket_id,)).fetchall()
+    conn.close()
+    return render_template("comments_partial.html", comments=comments)
 
 @app.route("/dashboard")
 @login_required
@@ -1119,142 +1134,121 @@ def test_email_confirmation():
 
 @app.route("/ticket/<int:ticket_id>/add_comment", methods=["POST"])
 def add_comment_route(ticket_id):
-    body = request.form.get("body", "").strip()
-    is_internal_form_value = request.form.get("is_internal")
-    is_internal = True if is_internal_form_value == "on" else False
+    # Проверка аутентификации
+    if "user_id" not in session and "public_token" not in request.form:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"error": "Unauthorized"}), 401
+        return redirect(url_for('login'))
 
+    # Валидация данных
+    body = request.form.get("body", "").strip()
     if not body:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"error": "Текст комментария не может быть пустым"}), 400
         flash("Текст комментария не может быть пустым.", "danger")
-        if "user_id" not in session:
-            public_token_from_form = request.form.get('public_token')
-            if public_token_from_form:
-                return redirect(url_for('public_ticket', ticket_id=ticket_id, token=public_token_from_form))
-            else:
-                return redirect(url_for('index'))
         return redirect(url_for('ticket', ticket_id=ticket_id))
 
     conn = get_db_connection()
-    ticket_data = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-
-    if not ticket_data:
-        flash("Заявка не найдена.", "error")
-        conn.close()
-        return redirect(url_for('dashboard') if 'user_id' in session else url_for('index'))
-
-    user_id_session = session.get("user_id")
-    current_user_role = session.get("role")
-    current_user_name = session.get("user")
-
-    commenter_db_user_id = None
-    commenter_db_author_name = None
-    commenter_display_name = "Система"
-
-    moscow_tz = pytz.timezone('Europe/Moscow')
-    created_at_dt = datetime.now(moscow_tz)
-    created_at_str = created_at_dt.strftime('%Y-%m-%d %H:%M:%S')
-
-    comment_attachments_list = []
-    files_from_form = request.files.getlist("comment_files[]")
-    if not files_from_form:
-        files_from_form = request.files.getlist("files[]")
-
-    for file_storage in files_from_form:
-        if file_storage and file_storage.filename:
-            filename = save_file(file_storage)
-            if filename:
-                comment_attachments_list.append(filename)
-            else:
-                flash("Неподдерживаемый формат файла или MIME-типа для вложения в комментарий. Разрешены: jpg, jpeg, png, pdf, docx, txt.", "danger")
-                conn.close()
-                if user_id_session and (ticket_data['user_id'] == user_id_session or current_user_role != 'client'):
-                    return redirect(url_for('ticket', ticket_id=ticket_id))
-                elif ticket_data['public_token'] == request.form.get('public_token'):
-                    return redirect(url_for('public_ticket', ticket_id=ticket_id, token=ticket_data['public_token']))
-                else:
-                    return redirect(url_for('dashboard') if user_id_session else url_for('index'))
-
-    attachment_str_for_db = ",".join(comment_attachments_list) if comment_attachments_list else None
-
-    if user_id_session:
-        commenter_db_user_id = user_id_session
-        commenter_display_name = current_user_name if current_user_name else f"Пользователь ID {user_id_session}"
-        if current_user_role == 'client':
-            is_internal = False
-    else:
-        public_token_from_form = request.form.get("public_token")
-        if not ticket_data['public_token'] or ticket_data['public_token'] != public_token_from_form:
-            flash("Неверный токен для публичной заявки.", "danger")
-            conn.close()
-            return redirect(url_for('index'))
-        author_email_from_form = request.form.get("comment_author_email", "").strip()
-        if not author_email_from_form:
-            flash("Укажите ваш email для комментирования публичной заявки.", "danger")
-            conn.close()
-            return redirect(url_for('public_ticket', ticket_id=ticket_id, token=public_token_from_form))
-        commenter_db_author_name = author_email_from_form
-        commenter_display_name = author_email_from_form
-        is_internal = False
-
     try:
+        ticket_data = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+        if not ticket_data:
+            return handle_error("Заявка не найдена", 404, ticket_id,
+                               is_ajax=request.headers.get('X-Requested-With') == 'XMLHttpRequest')
+
+        # Обработка файлов
+        files = request.files.getlist("comment_files[]") or request.files.getlist("files[]")
+        attachments = process_attachments(files)
+        if isinstance(attachments, Response):
+            return attachments
+
+        # Подготовка данных комментария
+        comment_data = prepare_comment_data(
+            ticket_data=ticket_data,
+            session=session,
+            request=request,
+            body=body,
+            is_internal=request.form.get("is_internal") == "on",
+            attachments=attachments
+        )
+
+        # Сохранение в БД
         conn.execute(
-            "INSERT INTO comments (ticket_id, user_id, author_name, body, created_at, is_internal, attachment) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (ticket_id, commenter_db_user_id, commenter_db_author_name, body, created_at_str, 1 if is_internal else 0, attachment_str_for_db)
+            "INSERT INTO comments (ticket_id, user_id, author_name, body, created_at, is_internal, attachment) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (ticket_id, 
+             comment_data['user_id'], 
+             comment_data['author_name'], 
+             body, 
+             comment_data['created_at'], 
+             1 if comment_data['is_internal'] else 0, 
+             comment_data['attachments'])
         )
         conn.commit()
+
+        # Ответ для AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            comments = get_updated_comments(conn, ticket_id)
+            html = render_template("comments_partial.html", comments=comments)
+            conn.close()
+            return html
+
         flash("Комментарий успешно добавлен.", "success")
+        return redirect(url_for('ticket', ticket_id=ticket_id))
 
-        if not is_internal:
-            ticket_creator_user_id = ticket_data['user_id']
-            ticket_public_sender_email = decode_sender(ticket_data['sender']) if ticket_data['sender'] else None
-            ticket_subject_decoded = decode_sender(ticket_data['subject'])
-            domain = request.host_url.rstrip('/')
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error: {str(e)}")
+        return handle_error(str(e), 500, ticket_id,
+                           is_ajax=request.headers.get('X-Requested-With') == 'XMLHttpRequest')
 
-            if ticket_creator_user_id:
-                if commenter_db_user_id != ticket_creator_user_id:
-                    client_user_info = conn.execute("SELECT email, username FROM users WHERE id = ?", (ticket_creator_user_id,)).fetchone()
-                    if client_user_info and client_user_info['email']:
-                        ticket_access_url = f"{domain}/ticket/{ticket_id}"
-                        send_new_comment_email(client_user_info['email'], client_user_info['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url, commenter_display_name)
-            elif ticket_public_sender_email:
-                if not commenter_db_author_name or commenter_db_author_name.lower() != ticket_public_sender_email.lower():
-                    ticket_access_url = f"{domain}/public_ticket/{ticket_id}?token={ticket_data['public_token']}"
-                    send_new_comment_email(ticket_public_sender_email, ticket_public_sender_email, ticket_id, ticket_subject_decoded, body, ticket_access_url, commenter_display_name)
-
-            is_comment_by_client_or_public = (user_id_session and current_user_role == 'client') or (not user_id_session and commenter_db_author_name)
-            if is_comment_by_client_or_public:
-                notified_staff_ids = set()
-                assigned_staff_id = ticket_data['assigned_to']
-
-                if assigned_staff_id:
-                    assigned_staff_info = conn.execute("SELECT id, email, username FROM users WHERE id = ? AND role != 'client'", (assigned_staff_id,)).fetchone()
-                    if assigned_staff_info and assigned_staff_info['email']:
-                        ticket_access_url_for_staff = f"{domain}/ticket/{ticket_id}"
-                        send_new_comment_email(assigned_staff_info['email'], assigned_staff_info['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url_for_staff, commenter_display_name)
-                        notified_staff_ids.add(assigned_staff_info['id'])
-
-                admin_users = conn.execute("SELECT id, email, username FROM users WHERE role = 'admin'").fetchall()
-                for admin in admin_users:
-                    if admin['id'] not in notified_staff_ids and admin['email']:
-                        ticket_access_url_for_staff = f"{domain}/ticket/{ticket_id}"
-                        send_new_comment_email(admin['email'], admin['username'], ticket_id, ticket_subject_decoded, body, ticket_access_url_for_staff, commenter_display_name)
-
-    except sqlite3.Error as e:
-        app.logger.error(f"Database error when adding comment: {e}")
-        flash(f"Ошибка базы данных при добавлении комментария: {e}", "danger")
-    except Exception as e_general:
-        app.logger.error(f"General error when adding comment: {e_general}")
-        flash(f"Произошла ошибка при добавлении комментария: {e_general}", "danger")
     finally:
         if conn:
             conn.close()
 
-    if user_id_session:
-        return redirect(url_for('ticket', ticket_id=ticket_id))
-    elif ticket_data['public_token']:
-        token_for_redirect = request.form.get('public_token', ticket_data['public_token'])
-        return redirect(url_for('public_ticket', ticket_id=ticket_id, token=token_for_redirect))
-    else:
-        return redirect(url_for('index'))
+def handle_error(message, code, ticket_id, is_ajax=False):
+    if is_ajax:
+        return jsonify({"error": message}), code
+    flash(message, "danger")
+    return redirect(url_for('ticket', ticket_id=ticket_id))
+
+# Вспомогательные функции
+def process_attachments(files):
+    attachments = []
+    for file in files:
+        if file and file.filename:
+            filename = save_file(file)
+            if not filename:
+                return jsonify({"error": "Неподдерживаемый формат файла"}), 400
+            attachments.append(filename)
+    return ",".join(attachments) if attachments else None
+
+def prepare_comment_data(ticket_data, session, request, body, is_internal, attachments):
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    return {
+        'user_id': session.get("user_id"),
+        'author_name': get_author_name(session, request),
+        'created_at': datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S'),
+        'attachments': attachments,
+        'is_internal': is_internal if session.get("role") in ["admin", "user"] else False
+    }
+
+def get_author_name(session, request):
+    if "user_id" in session:
+        return session.get("user", "Аноним")
+    return request.form.get("comment_author_email", "Гость")
+
+def get_updated_comments(conn, ticket_id):
+    return conn.execute("""
+        SELECT c.*, u.username, u.avatar 
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.ticket_id = ?
+        ORDER BY c.created_at ASC
+    """, (ticket_id,)).fetchall()
+
+def send_notifications(ticket_data, comment_data):
+    # Реализация отправки уведомлений...
+    pass
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
