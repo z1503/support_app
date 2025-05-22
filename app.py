@@ -68,7 +68,7 @@ def save_file(file):
     if file and allowed_file(file.filename):
         # Проверка MIME-типа (браузерный заголовок)
         if file.mimetype not in ALLOWED_MIME_TYPES:
-            return None  # MIME-тип не разрешён
+            return None  
 
         filename = secure_filename(file.filename)
         ext = filename.rsplit('.', 1)[-1]
