@@ -579,6 +579,9 @@ def logout():
     session.clear()
     return redirect("/login")
 
+from datetime import datetime
+import pytz
+
 @app.route('/admin_dashboard')
 @login_required
 @role_required('admin')
@@ -586,15 +589,47 @@ def admin_dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Статистика по статусам
     cursor.execute("SELECT status, COUNT(*) FROM tickets GROUP BY status")
     statuses = cursor.fetchall()
-
     status_labels = [s["status"] for s in statuses]
     status_counts = [s[1] for s in statuses]
 
+    # Заявки за сегодня (МСК)
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    today = datetime.now(moscow_tz).date()
+    cursor.execute(
+        "SELECT COUNT(*) FROM tickets WHERE DATE(created_at) = ?", 
+        (today,)
+    )
+    tickets_today = cursor.fetchone()[0]  # Добавлено
+
+    # Статистика по дням недели
+    cursor.execute("""
+        SELECT 
+            strftime('%w', datetime(created_at, 'localtime')) as weekday_num,
+            COUNT(*) as count 
+        FROM tickets 
+        GROUP BY weekday_num
+    """)
+    weekdays_data = cursor.fetchall()
+    
+    weekdays_ru = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 
+                  'Четверг', 'Пятница', 'Суббота']
+    weekday_labels = [weekdays_ru[int(row['weekday_num'])] for row in weekdays_data]
+    weekday_counts = [row['count'] for row in weekdays_data]
+
     conn.close()
 
-    return render_template('admin_dashboard.html', status_labels=status_labels, status_counts=status_counts)
+    return render_template(
+        'admin_dashboard.html',
+        status_labels=status_labels,
+        status_counts=status_counts,
+        tickets_today=tickets_today,  # Добавлено
+        weekday_labels=weekday_labels,
+        weekday_counts=weekday_counts
+    )
+
 
 @app.route("/admin/users", methods=["GET", "POST"])
 @login_required

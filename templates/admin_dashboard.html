@@ -13,77 +13,99 @@
         border-radius: 2rem;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
         background: #fff;
-        padding: 2.5rem 2rem 2rem 2rem;
+        padding: 2rem;
         min-height: 70vh;
-        display: flex;
-        flex-direction: column;
-        gap: 2.5rem;
     }
 
     @media (max-width: 767px) {
         .ticket-main-card {
-            padding: 1.2rem 0.5rem;
+            padding: 1.5rem;
             border-radius: 1rem;
         }
     }
 
-    .ticket-title-row {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 1.5rem;
     }
 
-    .ticket-title-row h2 {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    .ticket-form-block {
+    .chart-card {
         background: #f8fafd;
         border-radius: 1.2rem;
-        padding: 2rem 1.5rem;
-        margin-top: 1.5rem;
+        padding: 1.5rem;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .admin-header {
         display: flex;
-        flex-direction: column;
-        gap: 2.2rem;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
     }
 
     .admin-users-btn {
-        font-size: 1.15rem;
-        padding: 0.9rem 2.2rem;
+        font-size: 1.1rem;
+        padding: 0.8rem 1.5rem;
         border-radius: 0.8rem;
         font-weight: 600;
-        letter-spacing: 0.02em;
-        margin-top: 1.5rem;
-        align-self: flex-end;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 576px) {
+        .admin-users-btn {
+            width: 100%;
+            text-align: center;
+        }
     }
 </style>
 
-
 <div class="ticket-main-card">
-    <!-- Заголовок -->
-    <div class="ticket-title-row">
+    <!-- Шапка с кнопкой -->
+    <div class="admin-header">
         <h2>Админ-панель</h2>
-    </div>
-
-    <div class="ticket-form-block">
-        <!-- Статистика по тикетам -->
-        <div>
-            <h3 style="font-size:1.35rem; font-weight:600; margin-bottom:1.2rem;">Статистика по тикетам</h3>
-            <div class="chart-container" style="position: relative; width: 100%; height: 320px;">
-                <canvas id="ticketStatusChart"></canvas>
-            </div>
-        </div>
-        <!-- Кнопка управления пользователями -->
         <a class="btn btn-primary admin-users-btn" href="{{ url_for('admin_users') }}">
             <i class="bi bi-people"></i> Управление пользователями
         </a>
     </div>
+
+    <div class="stats-grid">
+        <!-- Блок сегодняшних заявок -->
+        <div class="chart-card">
+            <h3 style="font-size:1.25rem; margin-bottom:1rem;">
+                <i class="bi bi-clock-history"></i> Заявок сегодня
+            </h3>
+            <div style="font-size:10rem; font-weight:700; color:#36A2EB; text-align:center;">
+                {{ tickets_today }}
+            </div>
+        </div>
+
+        <!-- Круговая диаграмма статусов -->
+        <div class="chart-card">
+            <h3 style="font-size:1.25rem; margin-bottom:1rem;">
+                <i class="bi bi-pie-chart"></i> Статусы тикетов за все время
+            </h3>
+            <div style="position: relative; height: 250px;">
+                <canvas id="ticketStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- График по дням недели -->
+    <div class="chart-card" style="margin-top: 2rem;">
+        <h3 style="font-size:1.25rem; margin-bottom:1rem;">
+            <i class="bi bi-calendar-week"></i> Активность по дням недели
+        </h3>
+        <div style="position: relative; height: 300px;">
+            <canvas id="weekdayChart"></canvas>
+        </div>
+    </div>
 </div>
 
-
+<!-- Остальной JavaScript без изменений -->
 <script>
     Chart.register(ChartDataLabels);
     var ctx = document.getElementById('ticketStatusChart').getContext('2d');
@@ -91,29 +113,53 @@
         type: 'pie',
         data: {
             labels: {{ status_labels| tojson }},
-    datasets: [{
-        label: 'Тикеты по статусам',
-        data: {{ status_counts| tojson }},
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-        hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+            datasets: [{
+                label: 'Тикеты по статусам',
+                data: {{ status_counts| tojson }},
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
             }]
         },
-    options: {
-        plugins: {
-            datalabels: {
-                formatter: function(value, ctx) {
-                    return value;
-                },
-                color: '#fff',
-                    font: {
-                    weight: 'bold',
-                        size: 16
+        options: {
+            plugins: {
+                datalabels: {
+                    formatter: (value) => value,
+                    color: '#fff',
+                    font: { weight: 'bold', size: 14 }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    var ctxWeekday = document.getElementById('weekdayChart').getContext('2d');
+    var weekdayChart = new Chart(ctxWeekday, {
+        type: 'bar',
+        data: {
+            labels: {{ weekday_labels| tojson }},
+            datasets: [{
+                label: 'Заявок по дням',
+                data: {{ weekday_counts| tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#666',
+                    font: { weight: 'bold', size: 12 }
                 }
             }
-        },
-        responsive: true,
-            maintainAspectRatio: false
-    }
+        }
     });
 </script>
+
 {% endblock %}
