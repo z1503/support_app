@@ -349,7 +349,7 @@ def dashboard():
     query = """
         SELECT t.*, u.username AS assigned_username
         FROM tickets t
-        LEFT JOIN users u ON t.assigned_to = u.id
+        LEFT JOIN users u ON t.assignee_id = u.id
     """
     params = []
 
@@ -521,7 +521,7 @@ def ticket(ticket_id):
         # Добавление комментариев обрабатывается отдельным маршрутом /add_comment
         if request.method == "POST":
             new_status = request.form.get("status")
-            new_assigned_to_str = request.form.get("assigned_to") # ID пользователя или пустая строка
+            new_assignee_id_str = request.form.get("assignee_id") # ID пользователя или пустая строка
             status_changed_flag = False
             assignee_changed_flag = False
 
@@ -529,22 +529,22 @@ def ticket(ticket_id):
                 conn.execute("UPDATE tickets SET status = ? WHERE id = ?", (new_status, ticket_id))
                 status_changed_flag = True
             
-            new_assigned_to_id = None
-            if new_assigned_to_str: # Если что-то выбрано
+            new_assignee_id_id = None
+            if new_assignee_id_str: # Если что-то выбрано
                 try:
-                    new_assigned_to_id = int(new_assigned_to_str)
+                    new_assignee_id_id = int(new_assignee_id_str)
                 except ValueError:
                     flash("Некорректный ID исполнителя.", "warning")
                     # Оставляем текущего исполнителя или None, если его не было
-                    new_assigned_to_id = ticket_dict.get("assigned_to") 
+                    new_assignee_id_id = ticket_dict.get("assignee_id") 
             
             # Проверяем, изменился ли исполнитель (включая назначение/снятие None)
-            if new_assigned_to_id != ticket_dict.get("assigned_to"):
-                conn.execute("UPDATE tickets SET assigned_to = ? WHERE id = ?", (new_assigned_to_id, ticket_id))
+            if new_assignee_id_id != ticket_dict.get("assignee_id"):
+                conn.execute("UPDATE tickets SET assignee_id = ? WHERE id = ?", (new_assignee_id_id, ticket_id))
                 assignee_changed_flag = True
-            elif 'assigned_to' in request.form and not new_assigned_to_str and ticket_dict.get("assigned_to") is not None:
+            elif 'assignee_id' in request.form and not new_assignee_id_str and ticket_dict.get("assignee_id") is not None:
                 # Если поле было передано пустым (сняли исполнителя), а ранее он был
-                conn.execute("UPDATE tickets SET assigned_to = NULL WHERE id = ?", (ticket_id,))
+                conn.execute("UPDATE tickets SET assignee_id = NULL WHERE id = ?", (ticket_id,))
                 assignee_changed_flag = True
 
             if status_changed_flag or assignee_changed_flag:
