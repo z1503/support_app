@@ -353,7 +353,6 @@
         </form>
         {% if tickets %}
         <!-- Мобильные карточки -->
-        <!-- Мобильные карточки -->
         <form method="POST" action="{{ url_for('delete_selected_tickets') }}" class="d-md-none mb-3">
             <div class="mobile-tickets-list">
                 {% for ticket in tickets %}
@@ -394,7 +393,7 @@
         </form>
 
         <!-- Десктопная таблица -->
-        <form method="POST" action="{{ url_for('delete_selected_tickets') }}">
+        <form method="POST" action="{{ url_for('delete_selected_tickets') }}"class="d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-tickets align-middle mb-0">
                     <thead>
