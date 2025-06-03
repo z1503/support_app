@@ -477,7 +477,15 @@ def ticket(ticket_id):
     with get_db_connection() as conn:
         # Получаем данные заявки и имя создателя
         ticket_data_row = conn.execute(
-            "SELECT t.*, u_creator.username as creator_username FROM tickets t LEFT JOIN users u_creator ON t.user_id = u_creator.id WHERE t.id = ?",
+             """
+              SELECT t.*, 
+                   u_creator.username as creator_username,
+                    u_assigned.username as assigned_username  
+                FROM tickets t
+                     LEFT JOIN users u_creator ON t.user_id = u_creator.id
+                     LEFT JOIN users u_assigned ON t.assignee_id = u_assigned.id  
+                 WHERE t.id = ?
+                 """,
             (ticket_id,)
         ).fetchone()
 
@@ -521,7 +529,7 @@ def ticket(ticket_id):
         # Добавление комментариев обрабатывается отдельным маршрутом /add_comment
         if request.method == "POST":
             new_status = request.form.get("status")
-            new_assignee_id_str = request.form.get("assignee_id") # ID пользователя или пустая строка
+            new_assignee_id_str = request.form.get("assigned_to") # ID пользователя или пустая строка
             status_changed_flag = False
             assignee_changed_flag = False
 
