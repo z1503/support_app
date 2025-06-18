@@ -328,21 +328,20 @@ def dashboard():
     role = session.get("role")
     user_id = session.get("user_id")
 
-    # Параметры запроса
+    # Параметры запроса (используем sort_by и sort_order)
     sort_by = request.args.get('sort_by', 'created_at')
     sort_order = request.args.get('sort_order', 'desc')
     status_filter = request.args.get('status_filter')
     page = int(request.args.get('page', 1))
 
     # Чтение параметра per_page из URL или cookies
-    per_page = request.args.get('per_page', request.cookies.get('per_page', 20))  # по умолчанию 20 заявок
+    per_page = request.args.get('per_page', request.cookies.get('per_page', 20))
     per_page = int(per_page)
-
-    # Ограничиваем значение per_page для предотвращения перегрузки
     if per_page > 100:
-        per_page = 100  # Установите ограничение на 100 заявок на страницу
+        per_page = 100
 
-    valid_columns = ['id', 'sender', 'subject', 'status', 'created_at']
+    # Добавляем assigned_username в список допустимых полей
+    valid_columns = ['id', 'sender', 'subject', 'status', 'created_at', 'assigned_username']
     if sort_by not in valid_columns:
         sort_by = 'created_at'
 
@@ -374,9 +373,8 @@ def dashboard():
     tickets = conn.execute(query, params).fetchall()
     conn.close()
 
-    total_pages = (total_tickets + per_page - 1) // per_page  # округление вверх
+    total_pages = (total_tickets + per_page - 1) // per_page
 
-    # Сохранение выбора per_page в cookies
     resp = make_response(render_template(
         "dashboard.html",
         tickets=tickets,
@@ -387,8 +385,9 @@ def dashboard():
         total_pages=total_pages,
         status_filter=status_filter
     ))
-    resp.set_cookie('per_page', str(per_page), max_age=60*60*24*30)  # Сохраняем на 30 дней
+    resp.set_cookie('per_page', str(per_page), max_age=60*60*24*30)
     return resp
+
 
 @app.template_filter('dt')
 def dt(value):

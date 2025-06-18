@@ -393,7 +393,7 @@
         </form>
 
         <!-- Десктопная таблица -->
-        <form method="POST" action="{{ url_for('delete_selected_tickets') }}"class="d-none d-md-block">
+        <form method="POST" action="{{ url_for('delete_selected_tickets') }}" class="d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-tickets align-middle mb-0">
                     <thead>
@@ -404,12 +404,60 @@
                                     onclick="toggleAll(this)">
                             </th>
                             {% endif %}
-                            <th class="sortable-column number-col">№</th>
-                            <th class="sortable-column sender-col">Отправитель</th>
-                            <th class="sortable-column subject-col">Тема</th>
-                            <th class="sortable-column date-col">Дата</th>
-                            <th class="sortable-column status-col">Статус</th>
-                            <th class="sortable-column assigned-col"><span title="Ответственный">Исп.</span></th>
+                            <th class="sortable-column number-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='id', sort_order='desc' if sort_by=='id' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    №
+                                    {% if sort_by == 'id' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="sortable-column sender-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='sender', sort_order='desc' if sort_by=='sender' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    Отправитель
+                                    {% if sort_by == 'sender' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="sortable-column subject-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='subject', sort_order='desc' if sort_by=='subject' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    Тема
+                                    {% if sort_by == 'subject' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="sortable-column date-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='created_at', sort_order='desc' if sort_by=='created_at' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    Дата
+                                    {% if sort_by == 'created_at' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="sortable-column status-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='status', sort_order='desc' if sort_by=='status' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    Статус
+                                    {% if sort_by == 'status' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="sortable-column assigned-col">
+                                <a
+                                    href="{{ url_for('dashboard', page=page, per_page=per_page, sort_by='assigned_username', sort_order='desc' if sort_by=='assigned_username' and sort_order=='asc' else 'asc', status_filter=status_filter) }}">
+                                    <span title="Ответственный">Исп.</span>
+                                    {% if sort_by == 'assigned_username' %}
+                                    <span class="sort-arrow">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -458,6 +506,8 @@
                 {% endif %}
             </div>
         </form>
+
+
 
         <style>
             .checkbox-label {
